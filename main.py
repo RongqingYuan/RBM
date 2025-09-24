@@ -8,7 +8,7 @@ from RBM.pairwise_lddt import get_lddt_scores
 from RBM.pairwise_tmscore import get_tm_scores
 from RBM.interface_scores import save_interface_scores
 from RBM.model_scores import save_model_scores_v1, save_model_scores_v2, save_model_scores_v3
-from RBM.antibody_scores import save_antibody_scores
+from RBM.antibody_scores import save_antibody_scores_v3
 
 
 if __name__ == "__main__":
@@ -20,11 +20,13 @@ if __name__ == "__main__":
     parser.add_argument('--qs_cutoff', type=int, default=10)
     parser.add_argument('--dockq_path', type=str, default="DockQ")
     parser.add_argument('--lddt_path', type=str, default="lddt")
-    parser.add_argument('--tmscore_path', type=str, default="/home2/s439906/software/USalign/TMscore")
+    parser.add_argument('--tmscore_path', type=str, default="TMscore")
     parser.add_argument('--n_cpu', type=int, default=48)
     parser.add_argument('--antibody', action='store_true')
     parser.add_argument('--chainAs', type=str, default="")
     parser.add_argument('--chainBs', type=str, default="")
+    parser.add_argument('--rbm_version', type=str, choices=['min', 'all', 'average'], default='min', help='RBM version: min, all, or average')
+    parser.add_argument('--interface_weight', type=str, choices=['log2', 'log10', 'linear'], default='log10', help='Weighting method: log2, log10, or linear')
 
     args = parser.parse_args()
     input_dir = args.input_dir
@@ -39,7 +41,9 @@ if __name__ == "__main__":
     antibody = args.antibody
     chainAs = args.chainAs
     chainBs = args.chainBs
-    
+    rbm_version = args.rbm_version
+    interface_weight = args.interface_weight
+
     save_ips_and_ics(input_dir, target, name, output_dir)
     save_qs_best(input_dir, target, name, output_dir, qs_cutoff, n_cpu)
     save_pairwise_interfaces(input_dir, target, name, output_dir)
@@ -53,9 +57,16 @@ if __name__ == "__main__":
     save_interface_scores(input_dir, target, name, output_dir)
 
     if not antibody:
-        save_model_scores_v1(input_dir, target, name, output_dir)
-        save_model_scores_v2(input_dir, target, name, output_dir)
-        save_model_scores_v3(input_dir, target, name, output_dir)
+        if rbm_version == 'average':
+            save_model_scores_v1(input_dir, target, name, output_dir, interface_weight)
+        elif rbm_version == 'all':
+            save_model_scores_v2(input_dir, target, name, output_dir, interface_weight)
+        elif rbm_version == 'min':
+            save_model_scores_v3(input_dir, target, name, output_dir, interface_weight)
+        else:
+            raise ValueError("Invalid RBM version")
+        print("Completed RBM scoring")
+        print("RBM version: " + rbm_version + " interface weight: " + interface_weight)
     else:
         if chainAs and chainBs:
             chainA_list = []
@@ -64,6 +75,6 @@ if __name__ == "__main__":
                 chainA_list.append(chain)
             for chain in chainBs:
                 chainB_list.append(chain)
-            save_antibody_scores(input_dir, target, name, output_dir, chainA_list, chainB_list)
+            save_antibody_scores_v3(input_dir, target, name, output_dir, chainA_list, chainB_list)
         else:
             raise ValueError("Please provide valid chainAs and chainBs")
