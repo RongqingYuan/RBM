@@ -42,7 +42,7 @@ def get_weighted_average(scores):
     ave_tm = round(sum(v * w for v, w in zip(tm, weight)) / sum(weight), 4)
     return [ave_ips, ave_ics, ave_qsbest, ave_dockq, ave_lddt, ave_tm]
 
-def save_model_scores_v1(input_dir, target, name, output_dir):
+def save_model_scores_v1(input_dir, target, name, output_dir, interface_weight):
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/per_interface_scores/' + target + '.result', 'r')
     model2Rscores = {}
@@ -51,7 +51,14 @@ def save_model_scores_v1(input_dir, target, name, output_dir):
         if countl:
             words = line.split()
             model = words[0]
-            weight = math.log10(float(words[4]))
+            if interface_weight == 'log2':
+                weight = math.log2(float(words[4]))
+            elif interface_weight == 'log10':
+                weight = math.log10(float(words[4]))
+            elif interface_weight == 'linear':
+                weight = float(words[4])
+            else:
+                raise ValueError("Invalid interface weight")
             if weight:
                 if words[1] == 'REF':
                     try:
@@ -96,7 +103,7 @@ def save_model_scores_v1(input_dir, target, name, output_dir):
             tm = round((Rtm + Mtm) / 2, 4)
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\t' + str(lddt) + '\t' + str(tm) + '\n')
     rp.close()
-def save_model_scores_v2(input_dir, target, name, output_dir):
+def save_model_scores_v2(input_dir, target, name, output_dir, interface_weight):
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/per_interface_scores/' + target + '.result', 'r')
     model2Rscores = {}
@@ -105,7 +112,14 @@ def save_model_scores_v2(input_dir, target, name, output_dir):
         if countl:
             words = line.split()
             model = words[0]
-            weight = math.log10(float(words[4]))
+            if interface_weight == 'log2':
+                weight = math.log2(float(words[4]))
+            elif interface_weight == 'log10':
+                weight = math.log10(float(words[4]))
+            elif interface_weight == 'linear':
+                weight = float(words[4])
+            else:
+                raise ValueError("Invalid interface weight")
             if weight:
                 if words[1] == 'REF':
                     try:
@@ -156,7 +170,7 @@ def save_model_scores_v2(input_dir, target, name, output_dir):
             [ips, ics, qsbest, dockq, lddt, tm] = get_weighted_average(all_interface_scores)
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\t' + str(lddt) + '\t' + str(tm) + '\n')
     rp.close()
-def save_model_scores_v3(input_dir, target, name, output_dir):
+def save_model_scores_v3(input_dir, target, name, output_dir, interface_weight):
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/per_interface_scores/' + target + '.result', 'r')
     model2Rscores = {}
@@ -165,7 +179,14 @@ def save_model_scores_v3(input_dir, target, name, output_dir):
         if countl:
             words = line.split()
             model = words[0]
-            weight = math.log10(float(words[4]))
+            if interface_weight == 'log2':
+                weight = math.log2(float(words[4]))
+            elif interface_weight == 'log10':
+                weight = math.log10(float(words[4]))
+            elif interface_weight == 'linear':
+                weight = float(words[4])
+            else:
+                raise ValueError("Invalid interface weight")
             if weight:
                 if words[1] == 'REF':
                     try:
@@ -215,6 +236,6 @@ if __name__ == "__main__":
     target = sys.argv[2]
     name = sys.argv[3]
     output_dir = sys.argv[4]
-    # save_model_scores(input_dir, target, name, output_dir)
+    # save_model_scores_v1(input_dir, target, name, output_dir)
     # save_model_scores_v2(input_dir, target, name, output_dir)
-    save_model_scores_v3(input_dir, target, name, output_dir)
+    # save_model_scores_v3(input_dir, target, name, output_dir)
