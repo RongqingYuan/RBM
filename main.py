@@ -21,6 +21,9 @@ if __name__ == "__main__":
     parser.add_argument('--dockq_path', type=str, default="DockQ")
     parser.add_argument('--lddt_path', type=str, default="lddt")
     parser.add_argument('--tmscore_path', type=str, default="TMscore")
+    parser.add_argument('--scores', nargs='+', choices=['ICS', 'IPS', 'QS_best', 'DockQ', 'lDDT', 'TMscore'], 
+                       default=['ICS', 'IPS', 'QS_best', 'DockQ', 'lDDT', 'TMscore'],
+                       help='Choose 1-6 scores from: ICS, IPS, QS_best, DockQ, lDDT, TMscore')
     parser.add_argument('--n_cpu', type=int, default=48)
     parser.add_argument('--antibody', action='store_true')
     parser.add_argument('--chainAs', type=str, default="")
@@ -43,16 +46,17 @@ if __name__ == "__main__":
     chainBs = args.chainBs
     rbm_version = args.rbm_version
     interface_weight = args.interface_weight
+    scores = args.scores
 
     save_ips_and_ics(input_dir, target, name, output_dir)
     save_qs_best(input_dir, target, name, output_dir, qs_cutoff, n_cpu)
     save_pairwise_interfaces(input_dir, target, name, output_dir)
     save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu)
     run_dockq(output_dir, target)
-    run_lddt(output_dir, target)
-    run_tmscore(output_dir, target)
     get_dockq_scores(target, output_dir)
+    run_lddt(output_dir, target)
     get_lddt_scores(target, output_dir)
+    run_tmscore(output_dir, target)
     get_tm_scores(target, output_dir)
     save_interface_scores(input_dir, target, name, output_dir)
 
