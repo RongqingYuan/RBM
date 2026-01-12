@@ -244,11 +244,11 @@ def save_ips_and_ics(input_dir, target, name, output_dir):
     for model in models:
         get_ips_and_ics(input_dir, target, name, model, output_dir)
 
-if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    target = sys.argv[2]
-    name = sys.argv[3]
-    output_dir = sys.argv[4]
-    save_ips_and_ics(input_dir, target, name, output_dir)
+# if __name__ == "__main__":
+#     input_dir = sys.argv[1]
+#     target = sys.argv[2]
+#     name = sys.argv[3]
+#     output_dir = sys.argv[4]
+#     save_ips_and_ics(input_dir, target, name, output_dir)
 
 

@@ -139,20 +139,11 @@ def save_model_scores_v2(input_dir, target, name, output_dir, interface_weight):
 
         if checkR:
             all_R_interface_scores = model2Rscores[model]
-            # [Rips, Rics, Rqsbest, Rdockq, Rlddt, Rtm] = get_weighted_average(model2Rscores[model])
             if checkM:
                 all_M_interface_scores = model2Mscores[model]
-                # [Mips, Mics, Mqsbest, Mdockq, Mlddt, Mtm] = get_weighted_average(model2Mscores[model])
             else:
                 all_M_interface_scores = []
-                # Mips, Mics, Mqsbest, Mdockq, Mlddt, Mtm = 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
-            
-            # ips = round((Rips + Mips) / 2, 4)
-            # ics = round((Rics + Mics) / 2, 4)
-            # qsbest = round((Rqsbest + Mqsbest) / 2, 4)
-            # dockq = round((Rdockq + Mdockq) / 2, 4)
-            # lddt = round((Rlddt + Mlddt) / 2, 4)
-            # tm = round((Rtm + Mtm) / 2, 4)
+
             all_interface_scores = all_R_interface_scores + all_M_interface_scores
             [ips, ics, qsbest, dockq, lddt, tm] = get_weighted_average(all_interface_scores)
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\t' + str(lddt) + '\t' + str(tm) + '\n')
@@ -218,11 +209,11 @@ def save_model_scores_v3(input_dir, target, name, output_dir, interface_weight):
             tm = round(min(Rtm, Mtm), 4)
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\t' + str(lddt) + '\t' + str(tm) + '\n')
     rp.close()
-if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    target = sys.argv[2]
-    name = sys.argv[3]
-    output_dir = sys.argv[4]
-    # save_model_scores_v1(input_dir, target, name, output_dir)
-    # save_model_scores_v2(input_dir, target, name, output_dir)
-    # save_model_scores_v3(input_dir, target, name, output_dir)
+# if __name__ == "__main__":
+#     input_dir = sys.argv[1]
+#     target = sys.argv[2]
+#     name = sys.argv[3]
+#     output_dir = sys.argv[4]
+#     save_model_scores_v1(input_dir, target, name, output_dir)
+#     save_model_scores_v2(input_dir, target, name, output_dir)
+#     save_model_scores_v3(input_dir, target, name, output_dir)

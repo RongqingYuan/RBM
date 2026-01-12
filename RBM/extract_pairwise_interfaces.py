@@ -288,40 +288,11 @@ def save_pairwise_interfaces(input_dir, target, name, output_dir, score_filter_r
                 f.write(model + '\t' + case[0] + '\t' + case[1] + '\n')
 
 
-if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    target = sys.argv[2]
-    name = sys.argv[3]
-    output_dir = sys.argv[4]
-    save_pairwise_interfaces(input_dir, target, name, output_dir)
+# if __name__ == "__main__":
+#     input_dir = sys.argv[1]
+#     target = sys.argv[2]
+#     name = sys.argv[3]
+#     output_dir = sys.argv[4]
+#     save_pairwise_interfaces(input_dir, target, name, output_dir)
 
 
-
-# models = get_models(input_dir, target, name)
-# Rchain2resids, Rchain2lines = get_Rchain2resids_and_Rchain2lines(input_dir, target, name)
-# model2qsbest = get_model2qsbest(output_dir, target)
-# if not os.path.exists(output_dir + '/' + target + '/' + 'pairwise_interfaces'):
-#     os.makedirs(output_dir + '/' + target + '/' + 'pairwise_interfaces')
-# with open(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + target + '.list','w') as f:
-#     for model in models:
-#         pair2results = get_pair2scores(model, target, model2qsbest, output_dir)
-#         model, need_cases = process_model(input_dir, model, target, pair2results, Rchain2resids, Rchain2lines, output_dir)
-#         for case in need_cases:
-#             f.write(model + '\t' + case[0] + '\t' + case[1] + '\n')
-
-
-
-
-# pool = Pool(processes = 32)
-# processes = []
-# for model in models:
-# 	process = pool.apply_async(process_model, [model])
-# 	processes.append(process)
-# listp = open('step9/' + target + '.list','w')
-# for process in processes:
-#     [model, cases] = process.get()
-#     for case in cases:
-#         pair1 = case[0]
-#         pair2 = case[1]
-#         listp.write(model + '\t' + pair1 + '\t' + pair2 + '\n')
-# listp.close()

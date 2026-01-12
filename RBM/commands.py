@@ -2,9 +2,6 @@ import os
 import sys
 
 
-
-
-
 def save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu):
     print (f'Saving inputs for {target}...')
     if not os.path.exists(output_dir + '/' + target + '/' + 'cmds'):
@@ -56,11 +53,11 @@ def run_tmscore(output_dir, target):
     print (f'Running TMscore for {target}...')
     os.system(f"bash {output_dir}/{target}/cmds/TMscore_cmds.sh")
 
-if __name__ == "__main__":
-    output_dir = sys.argv[1]
-    target = sys.argv[2]
-    dockq_path = sys.argv[3]
-    lddt_path = sys.argv[4]
-    tmscore_path = sys.argv[5]
-    n_cpu = sys.argv[6]
-    save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu)
+# if __name__ == "__main__":
+#     output_dir = sys.argv[1]
+#     target = sys.argv[2]
+#     dockq_path = sys.argv[3]
+#     lddt_path = sys.argv[4]
+#     tmscore_path = sys.argv[5]
+#     n_cpu = sys.argv[6]
+#     save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu)

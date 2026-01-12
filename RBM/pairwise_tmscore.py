@@ -41,7 +41,7 @@ def get_tm_scores(target, output_dir):
             print (target, model, pair1, pair2)
     rp.close()
 
-if __name__ == "__main__":
-    target = sys.argv[1]
-    output_dir = sys.argv[2]
-    get_tm_scores(target, output_dir)
+# if __name__ == "__main__":
+#     target = sys.argv[1]
+#     output_dir = sys.argv[2]
+#     get_tm_scores(target, output_dir)

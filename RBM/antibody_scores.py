@@ -1,15 +1,8 @@
-import re
 import os
 import sys
 import math
 import numpy as np
 from utils import get_models
-
-
-# if target[1] == '0':
-#     fp = open('unknown_stoic/' + target + '/' + target + '.txt', 'r')
-# else:
-#     fp = open('known_stoic/' + target + '/' + target + '.txt', 'r')
 
 
 def get_weighted_average(scores):
@@ -173,16 +166,15 @@ def save_antibody_scores_v3(input_dir, target, name, output_dir, chainAs, chainB
     rp.close()
 
     
-if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    target = sys.argv[2]
-    name = sys.argv[3]
-    output_dir = sys.argv[4]
-    chainAs = []
-    for chain in sys.argv[5]:
-        chainAs.append(chain)
-    chainBs = []
-    for chain in sys.argv[6]:
-        chainBs.append(chain)
-
-    save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs)
+# if __name__ == "__main__":
+#     input_dir = sys.argv[1]
+#     target = sys.argv[2]
+#     name = sys.argv[3]
+#     output_dir = sys.argv[4]
+#     chainAs = []
+#     for chain in sys.argv[5]:
+#         chainAs.append(chain)
+#     chainBs = []
+#     for chain in sys.argv[6]:
+#         chainBs.append(chain)
+#     save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs)
