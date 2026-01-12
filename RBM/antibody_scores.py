@@ -3,26 +3,13 @@ import os
 import sys
 import math
 import numpy as np
-
+from utils import get_models
 
 
 # if target[1] == '0':
 #     fp = open('unknown_stoic/' + target + '/' + target + '.txt', 'r')
 # else:
 #     fp = open('known_stoic/' + target + '/' + target + '.txt', 'r')
-def get_models(input_dir, target, name):
-    fp = open(input_dir + '/' + target + '/' + name + '.txt', 'r')
-    start = 0
-    models = set([])
-    for line in fp:
-        words = line.split()
-        if words:
-            if words[0] == '#':
-                start = 1
-            elif start and len(words) > 1:
-                models.add(words[1])
-    fp.close()
-    return models
 
 
 def get_weighted_average(scores):

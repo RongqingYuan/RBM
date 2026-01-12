@@ -2,21 +2,8 @@ import os
 import sys
 import json
 from multiprocessing import Pool
+from utils import get_models
 
-
-def get_models(input_dir, target, name):
-    fp = open(input_dir + '/' + target + '/' + name + '.txt', 'r')
-    start = 0
-    models = []
-    for line in fp:
-        words = line.split()
-        if words:
-            if words[0] == '#':
-                start = 1
-            elif start and len(words) > 1:
-                models.append(words[1])
-    fp.close()
-    return models
 
 
 def get_Rchain2resids_and_Rchain2lines(input_dir, target, name):
