@@ -128,7 +128,7 @@ def get_qs_best(input_dir, target, name, model, cutoff):
         except KeyError:
             Rpair2contacts[(chain2, chain1)] = set([(resid2, resid1)])
 
-    fp = open('unknown_stoichiometry/' + target + '/' + 'model' + '/' + model, 'r')
+    fp = open(input_dir + '/' + target + '/' + 'model' + '/' + model, 'r')
 
     Mchains = []
     Mresid2CAcoor = {}
