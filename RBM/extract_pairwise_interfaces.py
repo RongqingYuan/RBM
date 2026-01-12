@@ -5,6 +5,15 @@ from multiprocessing import Pool
 from utils import get_models
 
 
+# ============================================================================
+# Configuration Constants
+# ============================================================================
+
+# Score filter ratio: only keep interface matches where at least one score
+# is greater than (best_score * SCORE_FILTER_RATIO)
+SCORE_FILTER_RATIO = 0.5
+
+
 
 def get_Rchain2resids_and_Rchain2lines(input_dir, target, name):
     fp = open(input_dir + '/' + target + '/' + name + '.pdb', 'r')
@@ -91,7 +100,7 @@ def process_model(input_dir, model, target, name, output_dir):
                 best_qs = item[4]
 
         for item in results:
-            if item[2] > best_ips * 0.5 or item[3] > best_ics * 0.5 or item[4] > best_qs * 0.5:
+            if item[2] > best_ips * SCORE_FILTER_RATIO or item[3] > best_ics * SCORE_FILTER_RATIO or item[4] > best_qs * SCORE_FILTER_RATIO:
                 chain1A = pair1.split('-')[0]
                 chain1B = pair1.split('-')[1]
                 if cate == 'reference':
@@ -200,7 +209,7 @@ def process_model_same_chain(input_dir, model, target, name,output_dir):
                 best_qs = item[4]
 
         for item in results:
-            if item[2] > best_ips * 0.5 or item[3] > best_ics * 0.5 or item[4] > best_qs * 0.5:
+            if item[2] > best_ips * SCORE_FILTER_RATIO or item[3] > best_ics * SCORE_FILTER_RATIO or item[4] > best_qs * SCORE_FILTER_RATIO:
                 chain1A = pair1.split('-')[0]
                 chain1B = pair1.split('-')[1]
                 if cate == 'reference':
@@ -257,7 +266,11 @@ def process_model_same_chain(input_dir, model, target, name,output_dir):
         need_cases.append(case)
     return [model, need_cases]
 
-def save_pairwise_interfaces(input_dir, target, name, output_dir):
+def save_pairwise_interfaces(input_dir, target, name, output_dir, score_filter_ratio):
+    # Override the global constant with the passed parameter
+    global SCORE_FILTER_RATIO
+    SCORE_FILTER_RATIO = score_filter_ratio
+    
     models = get_models(input_dir, target, name)
     if not os.path.exists(output_dir + '/' + target + '/' + 'pairwise_interfaces'):
         os.makedirs(output_dir + '/' + target + '/' + 'pairwise_interfaces')

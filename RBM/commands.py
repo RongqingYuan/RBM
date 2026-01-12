@@ -1,21 +1,11 @@
 import os
 import sys
 
-# target_list = sys.argv[1]
-# output_dir = sys.argv[2]
-
-# fp = open(target_list,'r')
-# targets = []
-# for line in fp:
-#     words = line.split()
-#     targets.append(words[0])
-# fp.close()
 
 
 
 
-
-def save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu=64):
+def save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu):
     print (f'Saving inputs for {target}...')
     if not os.path.exists(output_dir + '/' + target + '/' + 'cmds'):
         os.makedirs(output_dir + '/' + target + '/' + 'cmds')

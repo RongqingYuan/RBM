@@ -7,6 +7,8 @@ from multiprocessing import Pool
 from utils import get_models
 
 
+# CA distance pre-filter for computational optimization (Angstroms)
+CA_DISTANCE_PREFILTER = 20.0
 
 
 def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
@@ -53,7 +55,7 @@ def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
                         CAcoor1 = Rresid2CAcoor[chain1][resid1]
                         CAcoor2 = Rresid2CAcoor[chain2][resid2]
                         CAdist = ((CAcoor1[0] - CAcoor2[0]) ** 2 + (CAcoor1[1] - CAcoor2[1]) ** 2 + (CAcoor1[2] - CAcoor2[2]) ** 2) ** 0.5
-                        if CAdist < 20:
+                        if CAdist < CA_DISTANCE_PREFILTER:
                             coor1s = Rresid2coors[chain1][resid1]
                             coor2s = Rresid2coors[chain2][resid2]
                             dists = []
@@ -160,7 +162,7 @@ def get_qs_best(input_dir, target, name, model, cutoff):
                         CAcoor1 = Mresid2CAcoor[chain1][resid1]
                         CAcoor2 = Mresid2CAcoor[chain2][resid2]
                         CAdist = ((CAcoor1[0] - CAcoor2[0]) ** 2 + (CAcoor1[1] - CAcoor2[1]) ** 2 + (CAcoor1[2] - CAcoor2[2]) ** 2) ** 0.5
-                        if CAdist < 20:
+                        if CAdist < CA_DISTANCE_PREFILTER:
                             coor1s = Mresid2coors[chain1][resid1]
                             coor2s = Mresid2coors[chain2][resid2]
                             dists = []
@@ -278,7 +280,13 @@ def get_qs_best(input_dir, target, name, model, cutoff):
         all_results.append(['prediction', Mchain1, Mchain2, map_results])
     return model, all_results
 
-def save_qs_best(input_dir, target, name, output_dir, cutoff, n_cpu):
+def save_qs_best(input_dir, target, name, output_dir, cutoff=10, n_cpu=48, ca_distance_prefilter=20):
+    
+    
+    # Override the global constant with the passed parameter
+    global CA_DISTANCE_PREFILTER
+    CA_DISTANCE_PREFILTER = ca_distance_prefilter
+    
     if not os.path.exists(output_dir + '/' + target + '/' + "QS_best"):
         os.makedirs(output_dir + '/' + target + '/' + "QS_best")
     models = get_models(input_dir, target, name)
@@ -317,9 +325,7 @@ if __name__ == "__main__":
     target = sys.argv[2]
     name = sys.argv[3]
     output_dir = sys.argv[4]
-    cutoff = 10 # subject to change
-    n_cpu = 64
-    save_qs_best(input_dir, target, name, output_dir, cutoff, n_cpu)
+    save_qs_best(input_dir, target, name, output_dir)
 
 
 
