@@ -11,13 +11,27 @@ from RBM.model_scores import save_model_scores_v1, save_model_scores_v2, save_mo
 from RBM.antibody_scores import save_antibody_scores_v3
 
 
+# ============================================================================
+# Internal Constants (Do NOT modify unless you know what you're doing)
+# ============================================================================
+
+# Score filter ratio: only keep interface matches where at least one score
+# is greater than (best_score * SCORE_FILTER_RATIO)
+# This is an internal threshold that should not be changed in normal usage
+SCORE_FILTER_RATIO = 0.5
+
+# The cutoff for pre-filtering contacts based on CA distance
+CA_DISTANCE_PREFILTER = 20.0
+
+# The cutoff for QS-score
+QS_CUTOFF = 10
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--input_dir', type=str, required=True)
     parser.add_argument('--target', type=str, required=True)
     parser.add_argument('--name', type=str, required=True)
     parser.add_argument('--output_dir', type=str, required=True)
-    parser.add_argument('--qs_cutoff', type=int, default=10)
     parser.add_argument('--dockq_path', type=str, default="DockQ")
     parser.add_argument('--lddt_path', type=str, default="lddt")
     parser.add_argument('--tmscore_path', type=str, default="TMscore")
@@ -36,7 +50,6 @@ if __name__ == "__main__":
     target = args.target
     name = args.name
     output_dir = args.output_dir
-    qs_cutoff = args.qs_cutoff
     dockq_path = args.dockq_path
     lddt_path = args.lddt_path
     tmscore_path = args.tmscore_path
@@ -49,8 +62,8 @@ if __name__ == "__main__":
     scores = args.scores
 
     save_ips_and_ics(input_dir, target, name, output_dir)
-    save_qs_best(input_dir, target, name, output_dir, qs_cutoff, n_cpu)
-    save_pairwise_interfaces(input_dir, target, name, output_dir)
+    save_qs_best(input_dir, target, name, output_dir, QS_CUTOFF, n_cpu, CA_DISTANCE_PREFILTER)
+    save_pairwise_interfaces(input_dir, target, name, output_dir, SCORE_FILTER_RATIO)
     save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu)
     run_dockq(output_dir, target)
     get_dockq_scores(target, output_dir)

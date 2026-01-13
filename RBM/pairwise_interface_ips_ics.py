@@ -1,23 +1,22 @@
-import sys, json
+"""
+Calculate Interface Patch Similarity (IPS) and Interface Contact Similarity (ICS) scores.
+
+This module computes pairwise interface quality scores by comparing reference and model
+protein structures. IPS measures the overlap of interface residues, while ICS measures
+the precision and recall of interface contacts using the F1 score.
+"""
+
+import sys
+import json
 from itertools import permutations
 from multiprocessing import Pool
 import os
-
-def get_models(input_dir,target, name):
-    fp = open(input_dir + '/' + target + '/' + name + '.txt', 'r')
-    start = 0
-    models = []
-    for line in fp:
-        words = line.split()
-        if words:
-            if words[0] == '#':
-                start = 1
-            elif start and len(words) > 1:
-                models.append(words[1])
-    fp.close()
-    return models
+from utils import get_models
 
 def get_Rchain2resids(input_dir, target, name):
+    """
+    Extract residue IDs for each chain from the reference (target) PDB file.
+    """
     fp = open(input_dir + '/' + target + '/' + name + '.pdb', 'r')
     Rchain2resids = {}
     for line in fp:
@@ -33,6 +32,44 @@ def get_Rchain2resids(input_dir, target, name):
     return Rchain2resids
 
 def get_ips_and_ics(input_dir, target, name, model, output_dir):
+    """
+    Calculate IPS and ICS scores for a single model and save results.
+    
+    This function processes a model structure by comparing it with the reference structure.
+    It loads chain mappings and contact information from OpenStructure (OST) JSON files,
+    identifies interface pairs between reference and model chains, and computes quality scores.
+    
+    The function handles two types of interface pairs:
+    - Reference interfaces: compares model chain pairs that match reference chain pairs
+    - Prediction interfaces: compares reference chain pairs that match model chain pairs
+    
+    IPS (Interface Patch Similarity) is calculated as:
+    RMcount / (Rcount + Mcount - RMcount)
+    where RMcount is the number of overlapping residues, Rcount and Mcount are total
+    residues in reference and model interfaces respectively.
+    
+    ICS (Interface Contact Similarity) is calculated as the F1 score:
+    2 * precision * recall / (precision + recall)
+    where precision = overlap / reference_contacts and recall = overlap / model_contacts.
+    
+    Args:
+        input_dir: Path to input directory containing target folders
+        target: Target name (folder name, e.g., 'H0208')
+        name: Name of the reference structure (usually same as target)
+        model: Model name to process (e.g., 'H0208TS014_1')
+        output_dir: Path to output directory where results will be saved
+    
+    Returns:
+        int: Always returns 0 on success
+    
+    Output Files:
+        Creates two result files:
+        - {output_dir}/{target}/IPS/{model}.result
+        - {output_dir}/{target}/ICS/{model}.result
+        
+        Each file contains interface pairs with their corresponding scores.
+        Format: '>category chain1:chain2 size1:size2' followed by match results.
+    """
     Rchain2resids = get_Rchain2resids(input_dir, target, name)
     with open(input_dir + '/' + target + '/' + 'ost' + '/' + model + '.json', 'r') as file:
         data = json.load(file)
@@ -253,15 +290,18 @@ def get_ips_and_ics(input_dir, target, name, model, output_dir):
     return 0
 
 def save_ips_and_ics(input_dir, target, name, output_dir):
+    """
+    Calculate and save IPS and ICS scores for all models of a target.
+    """
     models = get_models(input_dir, target, name)
     for model in models:
         get_ips_and_ics(input_dir, target, name, model, output_dir)
 
-if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    target = sys.argv[2]
-    name = sys.argv[3]
-    output_dir = sys.argv[4]
-    save_ips_and_ics(input_dir, target, name, output_dir)
+# if __name__ == "__main__":
+#     input_dir = sys.argv[1]
+#     target = sys.argv[2]
+#     name = sys.argv[3]
+#     output_dir = sys.argv[4]
+#     save_ips_and_ics(input_dir, target, name, output_dir)
 
 

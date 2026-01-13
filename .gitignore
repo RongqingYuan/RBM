@@ -21,6 +21,10 @@ step14_old/
 step15/
 step18/
 manual_check/
+revision/
+results_revision/
+old/
+H0208/
 *.png
 *.err
 *.log

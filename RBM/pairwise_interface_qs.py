@@ -1,27 +1,32 @@
+"""
+Calculate QS_best scores for pairwise interfaces.
+
+This module computes QS_best (Quality Score best) by comparing interface contacts
+between reference and model structures. It uses a distance-based approach to identify
+contacts and calculates the best matching score between reference and model interfaces.
+"""
+
 import sys
 import json
 import os
 import numpy as np
 from itertools import permutations
 from multiprocessing import Pool
+from utils import get_models
 
 
-def get_models(input_dir, target, name):
-    fp = open(input_dir + '/' + target + '/' + name + '.txt', 'r')
-    start = 0
-    models = []
-    for line in fp:
-        words = line.split()
-        if words:
-            if words[0] == '#':
-                start = 1
-            elif start and len(words) > 1:
-                models.append(words[1])
-    fp.close()
-    return models
+# CA distance pre-filter for computational optimization (Angstroms)
+CA_DISTANCE_PREFILTER = 20.0
 
 
 def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
+    """
+    Extract residue IDs and contacts from the reference PDB file.
+    
+    Parses the reference PDB file to collect residue coordinates and identify
+    inter-chain contacts based on distance cutoff. Uses CA distance pre-filtering
+    for computational efficiency before calculating minimum atom distances.
+    """
     fp = open(input_dir + '/' + target + '/' + name + '.pdb', 'r')
     Rchains = []
     Rresid2CAcoor = {}
@@ -65,7 +70,7 @@ def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
                         CAcoor1 = Rresid2CAcoor[chain1][resid1]
                         CAcoor2 = Rresid2CAcoor[chain2][resid2]
                         CAdist = ((CAcoor1[0] - CAcoor2[0]) ** 2 + (CAcoor1[1] - CAcoor2[1]) ** 2 + (CAcoor1[2] - CAcoor2[2]) ** 2) ** 0.5
-                        if CAdist < 20:
+                        if CAdist < CA_DISTANCE_PREFILTER:
                             coor1s = Rresid2coors[chain1][resid1]
                             coor2s = Rresid2coors[chain2][resid2]
                             dists = []
@@ -81,6 +86,34 @@ def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
 
 
 def get_qs_best(input_dir, target, name, model, cutoff):
+    """
+    Calculate QS_best score for a single model.
+    
+    This function processes both reference and model structures to compute QS_best
+    (Quality Score best) for interface pairs. It first extracts contacts from both
+    structures using distance-based criteria, then identifies chain mappings from
+    OpenStructure JSON files.
+    
+    The function handles two types of interface pairs:
+    - Reference interfaces: compares model chain pairs that match reference chain pairs
+    - Prediction interfaces: compares reference chain pairs that match model chain pairs
+    
+    QS_best is calculated as:
+    overlap / max(len(reference_contacts), len(model_contacts))
+    where overlap is the intersection of reference and model contacts. Only contacts
+    within the reference chain residue ranges are considered for model contacts.
+    
+    Args:
+        input_dir: Path to input directory containing target folders
+        target: Target name (folder name, e.g., 'H0208')
+        name: Name of the reference structure (usually same as target)
+        model: Model name to process (e.g., 'H0208TS014_1')
+        cutoff: Distance cutoff in Angstroms for identifying contacts
+    
+    Returns:
+        tuple: (model, all_results) where all_results contains interface pairs
+               and their QS_best scores organized by category
+    """
     Rchain2resids, all_Rcontacts = get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff)
     with open(input_dir + '/' + target + '/' + 'ost' + '/' + model + '.json', 'r') as file:
         data = json.load(file)
@@ -128,7 +161,7 @@ def get_qs_best(input_dir, target, name, model, cutoff):
         except KeyError:
             Rpair2contacts[(chain2, chain1)] = set([(resid2, resid1)])
 
-    fp = open('unknown_stoichiometry/' + target + '/' + 'model' + '/' + model, 'r')
+    fp = open(input_dir + '/' + target + '/' + 'model' + '/' + model, 'r')
 
     Mchains = []
     Mresid2CAcoor = {}
@@ -172,7 +205,7 @@ def get_qs_best(input_dir, target, name, model, cutoff):
                         CAcoor1 = Mresid2CAcoor[chain1][resid1]
                         CAcoor2 = Mresid2CAcoor[chain2][resid2]
                         CAdist = ((CAcoor1[0] - CAcoor2[0]) ** 2 + (CAcoor1[1] - CAcoor2[1]) ** 2 + (CAcoor1[2] - CAcoor2[2]) ** 2) ** 0.5
-                        if CAdist < 20:
+                        if CAdist < CA_DISTANCE_PREFILTER:
                             coor1s = Mresid2coors[chain1][resid1]
                             coor2s = Mresid2coors[chain2][resid2]
                             dists = []
@@ -290,7 +323,18 @@ def get_qs_best(input_dir, target, name, model, cutoff):
         all_results.append(['prediction', Mchain1, Mchain2, map_results])
     return model, all_results
 
-def save_qs_best(input_dir, target, name, output_dir, cutoff, n_cpu):
+def save_qs_best(input_dir, target, name, output_dir, cutoff=10, n_cpu=48, ca_distance_prefilter=20):
+    """
+    Calculate and save QS_best scores for all models of a target.
+    
+    Processes all models in parallel using multiprocessing and computes QS_best scores
+    for each model. Results are written to a single output file containing all models
+    and their interface pair scores.
+    """
+    # Override the global constant with the passed parameter
+    global CA_DISTANCE_PREFILTER
+    CA_DISTANCE_PREFILTER = ca_distance_prefilter
+    
     if not os.path.exists(output_dir + '/' + target + '/' + "QS_best"):
         os.makedirs(output_dir + '/' + target + '/' + "QS_best")
     models = get_models(input_dir, target, name)
@@ -312,16 +356,6 @@ def save_qs_best(input_dir, target, name, output_dir, cutoff, n_cpu):
 
 
 
-    # rp = open('step8/' + target + '.result','w')
-    # for process in processes:
-    #     [model, all_results] = process.get()
-    #     for result in all_results:
-    #         category = result[0]
-    #         chain1 = result[1]
-    #         chain2 = result[2]
-    #         for item in result[3]:
-    #             rp.write(model + '\t' + category + '\t' + chain1 + ':' + chain2 + '\t' + item[0] + ':' + item[1] + '\t' + str(item[2]) + '\n')
-    # rp.close()
 
 
 if __name__ == "__main__":
@@ -329,9 +363,7 @@ if __name__ == "__main__":
     target = sys.argv[2]
     name = sys.argv[3]
     output_dir = sys.argv[4]
-    cutoff = 10 # subject to change
-    n_cpu = 64
-    save_qs_best(input_dir, target, name, output_dir, cutoff, n_cpu)
+    save_qs_best(input_dir, target, name, output_dir)
 
 
 

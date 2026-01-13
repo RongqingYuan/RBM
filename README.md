@@ -3,13 +3,6 @@
 A computational pipeline called Reciprocal Best Matching (RBM), which is designed for evaluating protein complex structure predictions with unknown stoichiometry during CASP16 assessment.
 
 
-## Directory Structure
-
-- `RBM/` - Implementation of the Reciprocal Best Matching algorithms.
-- `main.py` - Main script for running the pipeline.
-- `input/` - Directory for example input structures and data.
-
-
 ## Overview
 
 We developed and used RBM in our assessment of CASP16 Phase 0 challenge, in which stoichiometry information is not provided to the predictors. This pipeline provides an unbiased evaluation method that:
@@ -21,22 +14,39 @@ We developed and used RBM in our assessment of CASP16 Phase 0 challenge, in whic
 ## Installation
 
 Our pipeline requires the following software:
-- DockQ
-- lDDT
-- TMscore
+- [DockQ](https://github.com/wallnerlab/DockQ)
+- [lDDT](https://anaconda.org/bioconda/lddt)
+- [TMscore](https://github.com/pylelab/USalign)
 
-To install DockQ, please refer to:
+```
+pip install DockQ
+conda install -c conda-forge -c bioconda lddt tmalign
+```
 
-`https://github.com/wallnerlab/DockQ`
+## Input Example
 
-To install lddt, please refer to:
+To execute the pipeline, target structure, model structures, a list of models, and the OST raw results need to be provided. The directory structure should be as follows:
 
-`https://anaconda.org/bioconda/lddt`
 
-To install TMscore, you can consider installing it from source:
-
-`https://github.com/pylelab/USalign`
-
+```
+input/
+└── H0208/                                    # Target directory (target name)
+    ├── H0208.pdb                             # Reference structure (1 file)
+    ├── H0208.txt                             # Model list file (in our case, this file is from the prediction center)
+    ├── model/                                # Model structures directory
+    │   ├── H0208TS014_1                      # Model file (in PDB format)
+    │   ├── H0208TS014_2
+    │   ├── H0208TS014_3
+    │   ├── ...                               
+    │   └── H0208TS331_5
+    └── ost/                                  # OpenStructure results
+        ├── H0208TS014_1.json                 # OST comparison result for model 1
+        ├── H0208TS014_2.json                 
+        ├── H0208TS014_3.json
+        ├── H0208TS022_2.json
+        ├── ...                               
+        └── H0208TS331_5.json
+```
 
 
 ## Usage
@@ -73,9 +83,7 @@ python main.py --input_dir <input_directory> \
 - `--interface_weight`: Interface weighting method ('log2', 'log10', or 'linear', default: 'log10'. For more details, please refer to our paper)
 
 
-
-
-## Output
+## Output Example
 
 The pipeline generates:
 - Interface quality scores (ICS, IPS, QS_best)
@@ -83,6 +91,28 @@ The pipeline generates:
 - Per-interface evaluation results
 - Per-model evaluation results
 
+```
+output/
+└── H0208/
+    ├── IPS/                              # Interface Patch Similarity scores
+    │   ├── H0208TS014_1.result              # Per-interface IPS for each model
+    │   └── ...
+    ├── ICS/                              # Interface Contact Similarity scores
+    │   ├── H0208TS014_1.result              # Per-interface ICS for each model
+    │   └── ...
+    ├── QS_best/                          # QS-score (best match)
+    │   └── H0208.result         # All models combined
+    ├── DockQ/                            # DockQ scores
+    │   └── H0208.result         # All models combined
+    ├── lDDT/                             # Local Distance Difference Test
+    │   └── H0208.result         # All models combined
+    ├── TMscore/                          # TM-score (structure alignment)
+    │   └── H0208.result         # All models combined
+    ├── per_interface_scores/             # Consolidated per-interface scores
+    │   └── H0208.result         # Best scores for each interface
+    └── per_model_scores_v3/              # Final model rankings (v3, recommended)
+        └── H0208.result
+```
 
 ## Citation
 

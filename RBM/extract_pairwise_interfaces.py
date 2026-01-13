@@ -1,25 +1,36 @@
+"""
+Extract pairwise interface structures from reference and model PDB files.
+
+This module processes interface scores (IPS, ICS, QS_best) to identify high-quality
+interface pairs, then extracts the corresponding interface regions from reference
+and model structures into separate PDB files for further analysis.
+"""
+
 import os
 import sys
 import json
 from multiprocessing import Pool
+from utils import get_models
 
 
-def get_models(input_dir, target, name):
-    fp = open(input_dir + '/' + target + '/' + name + '.txt', 'r')
-    start = 0
-    models = []
-    for line in fp:
-        words = line.split()
-        if words:
-            if words[0] == '#':
-                start = 1
-            elif start and len(words) > 1:
-                models.append(words[1])
-    fp.close()
-    return models
+# ============================================================================
+# Configuration Constants
+# ============================================================================
+
+# Score filter ratio: only keep interface matches where at least one score
+# is greater than (best_score * SCORE_FILTER_RATIO)
+SCORE_FILTER_RATIO = 0.5
+
 
 
 def get_Rchain2resids_and_Rchain2lines(input_dir, target, name):
+    """
+    Extract residue IDs and PDB lines for each chain from reference structure.
+    
+    Parses the reference PDB file to collect residue IDs and store all ATOM
+    lines for each chain. Returns both the residue sets and the original PDB lines
+    needed for writing interface structures.
+    """
     fp = open(input_dir + '/' + target + '/' + name + '.pdb', 'r')
     Rchain2lines = {}
     Rchain2resids = {}
@@ -39,6 +50,12 @@ def get_Rchain2resids_and_Rchain2lines(input_dir, target, name):
 
 
 def get_model2qsbest(input_dir, target):
+    """
+    Load QS_best scores from result file.
+    
+    Reads the QS_best result file and organizes scores by model, category,
+    and interface pair. Returns a nested dictionary structure for easy lookup.
+    """
     fp = open(input_dir + '/' + target + '/' + 'QS_best' + '/' + target + '.result','r')
     model2qsbest = {}
     for line in fp:
@@ -57,6 +74,13 @@ def get_model2qsbest(input_dir, target):
 
 
 def get_pair2scores(model, target, model2qsbest, output_dir):
+    """
+    Load IPS and ICS scores for a model and combine with QS_best scores.
+    
+    Reads both IPS and ICS result files for a model and merges them with
+    QS_best scores. Returns a dictionary mapping interface pairs to their
+    combined score results.
+    """
     IPS_file = output_dir + '/' + target + '/' + 'IPS' + '/' + model + '.result'
     ICS_file = output_dir + '/' + target + '/' + 'ICS' + '/' + model + '.result'
     pair2results = {}
@@ -86,6 +110,14 @@ def get_pair2scores(model, target, model2qsbest, output_dir):
 
 
 def process_model(input_dir, model, target, name, output_dir):
+    """
+    Extract pairwise interface structures for a model.
+    
+    Identifies high-quality interface pairs based on IPS, ICS, and QS_best scores
+    using a score filter ratio. Extracts the interface regions from reference and
+    model structures and writes them to separate PDB files. Only extracts interfaces
+    that don't already have complete result files (DockQ, lDDT, TMscore).
+    """
     Rchain2resids, Rchain2lines = get_Rchain2resids_and_Rchain2lines(input_dir, target, name)
     model2qsbest = get_model2qsbest(output_dir, target)
     pair2results = get_pair2scores(model, target, model2qsbest, output_dir)
@@ -104,7 +136,7 @@ def process_model(input_dir, model, target, name, output_dir):
                 best_qs = item[4]
 
         for item in results:
-            if item[2] > best_ips * 0.5 or item[3] > best_ics * 0.5 or item[4] > best_qs * 0.5:
+            if item[2] > best_ips * SCORE_FILTER_RATIO or item[3] > best_ics * SCORE_FILTER_RATIO or item[4] > best_qs * SCORE_FILTER_RATIO:
                 chain1A = pair1.split('-')[0]
                 chain1B = pair1.split('-')[1]
                 if cate == 'reference':
@@ -195,6 +227,13 @@ def process_model(input_dir, model, target, name, output_dir):
 
 
 def process_model_same_chain(input_dir, model, target, name,output_dir):
+    """
+    Extract pairwise interface structures with same chain ID for lDDT analysis.
+    
+    Similar to process_model but writes interfaces with both chains assigned to
+    chain 'A' and applies residue number shifting to the second chain. This format
+    is required for lDDT calculation which expects single-chain structures.
+    """
     Rchain2resids, Rchain2lines = get_Rchain2resids_and_Rchain2lines(input_dir, target, name)
     model2qsbest = get_model2qsbest(output_dir, target)
     pair2results = get_pair2scores(model, target, model2qsbest, output_dir)
@@ -213,7 +252,7 @@ def process_model_same_chain(input_dir, model, target, name,output_dir):
                 best_qs = item[4]
 
         for item in results:
-            if item[2] > best_ips * 0.5 or item[3] > best_ics * 0.5 or item[4] > best_qs * 0.5:
+            if item[2] > best_ips * SCORE_FILTER_RATIO or item[3] > best_ics * SCORE_FILTER_RATIO or item[4] > best_qs * SCORE_FILTER_RATIO:
                 chain1A = pair1.split('-')[0]
                 chain1B = pair1.split('-')[1]
                 if cate == 'reference':
@@ -270,7 +309,19 @@ def process_model_same_chain(input_dir, model, target, name,output_dir):
         need_cases.append(case)
     return [model, need_cases]
 
-def save_pairwise_interfaces(input_dir, target, name, output_dir):
+def save_pairwise_interfaces(input_dir, target, name, output_dir, score_filter_ratio):
+    """
+    Extract and save pairwise interface structures for all models.
+    
+    Processes all models to extract interface pairs that meet the score filter
+    criteria. Creates two sets of interface PDB files: one for general analysis
+    (with separate chain IDs) and one for lDDT analysis (with same chain ID).
+    Generates list files containing all extracted interface pairs.
+    """
+    # Override the global constant with the passed parameter
+    global SCORE_FILTER_RATIO
+    SCORE_FILTER_RATIO = score_filter_ratio
+    
     models = get_models(input_dir, target, name)
     if not os.path.exists(output_dir + '/' + target + '/' + 'pairwise_interfaces'):
         os.makedirs(output_dir + '/' + target + '/' + 'pairwise_interfaces')
@@ -288,40 +339,11 @@ def save_pairwise_interfaces(input_dir, target, name, output_dir):
                 f.write(model + '\t' + case[0] + '\t' + case[1] + '\n')
 
 
-if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    target = sys.argv[2]
-    name = sys.argv[3]
-    output_dir = sys.argv[4]
-    save_pairwise_interfaces(input_dir, target, name, output_dir)
+# if __name__ == "__main__":
+#     input_dir = sys.argv[1]
+#     target = sys.argv[2]
+#     name = sys.argv[3]
+#     output_dir = sys.argv[4]
+#     save_pairwise_interfaces(input_dir, target, name, output_dir)
 
 
-
-# models = get_models(input_dir, target, name)
-# Rchain2resids, Rchain2lines = get_Rchain2resids_and_Rchain2lines(input_dir, target, name)
-# model2qsbest = get_model2qsbest(output_dir, target)
-# if not os.path.exists(output_dir + '/' + target + '/' + 'pairwise_interfaces'):
-#     os.makedirs(output_dir + '/' + target + '/' + 'pairwise_interfaces')
-# with open(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + target + '.list','w') as f:
-#     for model in models:
-#         pair2results = get_pair2scores(model, target, model2qsbest, output_dir)
-#         model, need_cases = process_model(input_dir, model, target, pair2results, Rchain2resids, Rchain2lines, output_dir)
-#         for case in need_cases:
-#             f.write(model + '\t' + case[0] + '\t' + case[1] + '\n')
-
-
-
-
-# pool = Pool(processes = 32)
-# processes = []
-# for model in models:
-# 	process = pool.apply_async(process_model, [model])
-# 	processes.append(process)
-# listp = open('step9/' + target + '.list','w')
-# for process in processes:
-#     [model, cases] = process.get()
-#     for case in cases:
-#         pair1 = case[0]
-#         pair2 = case[1]
-#         listp.write(model + '\t' + pair1 + '\t' + pair2 + '\n')
-# listp.close()
