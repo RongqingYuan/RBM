@@ -1,8 +1,23 @@
+"""
+Generate and execute commands for external structure analysis tools.
+
+This module creates input files and shell scripts for running DockQ, lDDT, and TMscore
+on pairwise interface structures, then executes these commands in batch.
+"""
+
 import os
 import sys
 
 
 def save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu):
+    """
+    Generate input files and shell scripts for running external analysis tools.
+    
+    Reads the list of pairwise interfaces and creates command input files for
+    DockQ, lDDT, and TMscore. Only generates commands for interfaces that don't
+    already have result files. Also creates shell scripts to run these commands
+    in parallel using batch_run.py.
+    """
     print (f'Saving inputs for {target}...')
     if not os.path.exists(output_dir + '/' + target + '/' + 'cmds'):
         os.makedirs(output_dir + '/' + target + '/' + 'cmds')
@@ -42,14 +57,17 @@ def save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu):
 
 
 def run_dockq(output_dir, target):
+    """Execute DockQ commands for all pairwise interfaces of a target."""
     print (f'Running DockQ for {target}...')
     os.system(f"bash {output_dir}/{target}/cmds/DockQ_cmds.sh")
 
 def run_lddt(output_dir, target):
+    """Execute lDDT commands for all pairwise interfaces of a target."""
     print (f'Running lDDT for {target}...')
     os.system(f"bash {output_dir}/{target}/cmds/lDDT_cmds.sh")
 
 def run_tmscore(output_dir, target):
+    """Execute TMscore commands for all pairwise interfaces of a target."""
     print (f'Running TMscore for {target}...')
     os.system(f"bash {output_dir}/{target}/cmds/TMscore_cmds.sh")
 

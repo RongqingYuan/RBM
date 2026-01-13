@@ -1,3 +1,10 @@
+"""
+Aggregate per-interface scores and identify best matches.
+
+This module consolidates scores from multiple sources (IPS, ICS, QS_best, DockQ, lDDT, TM-score)
+for each interface pair and identifies the best matching interface pairs based on maximum scores.
+"""
+
 import os
 import sys
 import numpy as np
@@ -5,6 +12,13 @@ from utils import get_models
 
 
 def get_pair2scores(model, target, model2qsbest, output_dir):
+    """
+    Load IPS and ICS scores for a model and combine with QS_best scores.
+    
+    Reads both IPS and ICS result files for a model, merges them with QS_best scores,
+    and calculates interface weights based on interface size. Returns a dictionary
+    mapping interface pairs to their combined score results and weights.
+    """
     IPS_file = output_dir + '/' + target + '/' + 'IPS' + '/' + model + '.result'
     ICS_file = output_dir + '/' + target + '/' + 'ICS' + '/' + model + '.result'
     pair2results = {}
@@ -36,6 +50,14 @@ def get_pair2scores(model, target, model2qsbest, output_dir):
 
 
 def save_interface_scores(input_dir, target, name, output_dir):
+    """
+    Aggregate and save per-interface scores for all models.
+    
+    Reads scores from IPS, ICS, QS_best, DockQ, lDDT, and TM-score result files.
+    For each interface pair, identifies the best matching pair based on maximum
+    scores across all metrics. Writes consolidated per-interface scores with
+    best matches and interface weights. Handles both reference (REF) and prediction (MOD) interfaces.
+    """
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/QS_best/' + target + '.result','r')
     model2qsbest = {}

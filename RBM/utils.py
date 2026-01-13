@@ -1,9 +1,4 @@
-"""
-Utility functions shared across the RBM module.
-
-This module contains common helper functions used by multiple scripts
-in the oligomer evaluation pipeline.
-"""
+"""Utility functions shared across the RBM module."""
 
 import os
 from typing import List
@@ -13,21 +8,8 @@ def get_models(input_dir: str, target: str, name: str) -> List[str]:
     """
     Read model names from the model list file.
     
-    The model list file should contain model names, one per line.
-    Lines starting with '#' are treated as comments and skipped.
-    
-    Args:
-        input_dir: Path to input directory containing target folders
-        target: Target name (folder name)
-        name: Name for the model list file (usually same as target)
-    
-    Returns:
-        List of model names to evaluate
-    
-    Example:
-        >>> models = get_models('./input', 'H0208', 'H0208')
-        >>> print(len(models))
-        315
+    Parses the model list file and extracts model names. Lines starting with '#'
+    are treated as comments. Model names are read after the first comment line.
     """
     model_list_path = os.path.join(input_dir, target, f'{name}.txt')
     

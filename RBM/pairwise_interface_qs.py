@@ -1,3 +1,11 @@
+"""
+Calculate QS_best scores for pairwise interfaces.
+
+This module computes QS_best (Quality Score best) by comparing interface contacts
+between reference and model structures. It uses a distance-based approach to identify
+contacts and calculates the best matching score between reference and model interfaces.
+"""
+
 import sys
 import json
 import os
@@ -12,6 +20,13 @@ CA_DISTANCE_PREFILTER = 20.0
 
 
 def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
+    """
+    Extract residue IDs and contacts from the reference PDB file.
+    
+    Parses the reference PDB file to collect residue coordinates and identify
+    inter-chain contacts based on distance cutoff. Uses CA distance pre-filtering
+    for computational efficiency before calculating minimum atom distances.
+    """
     fp = open(input_dir + '/' + target + '/' + name + '.pdb', 'r')
     Rchains = []
     Rresid2CAcoor = {}
@@ -71,6 +86,34 @@ def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
 
 
 def get_qs_best(input_dir, target, name, model, cutoff):
+    """
+    Calculate QS_best score for a single model.
+    
+    This function processes both reference and model structures to compute QS_best
+    (Quality Score best) for interface pairs. It first extracts contacts from both
+    structures using distance-based criteria, then identifies chain mappings from
+    OpenStructure JSON files.
+    
+    The function handles two types of interface pairs:
+    - Reference interfaces: compares model chain pairs that match reference chain pairs
+    - Prediction interfaces: compares reference chain pairs that match model chain pairs
+    
+    QS_best is calculated as:
+    overlap / max(len(reference_contacts), len(model_contacts))
+    where overlap is the intersection of reference and model contacts. Only contacts
+    within the reference chain residue ranges are considered for model contacts.
+    
+    Args:
+        input_dir: Path to input directory containing target folders
+        target: Target name (folder name, e.g., 'H0208')
+        name: Name of the reference structure (usually same as target)
+        model: Model name to process (e.g., 'H0208TS014_1')
+        cutoff: Distance cutoff in Angstroms for identifying contacts
+    
+    Returns:
+        tuple: (model, all_results) where all_results contains interface pairs
+               and their QS_best scores organized by category
+    """
     Rchain2resids, all_Rcontacts = get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff)
     with open(input_dir + '/' + target + '/' + 'ost' + '/' + model + '.json', 'r') as file:
         data = json.load(file)
@@ -281,8 +324,13 @@ def get_qs_best(input_dir, target, name, model, cutoff):
     return model, all_results
 
 def save_qs_best(input_dir, target, name, output_dir, cutoff=10, n_cpu=48, ca_distance_prefilter=20):
+    """
+    Calculate and save QS_best scores for all models of a target.
     
-    
+    Processes all models in parallel using multiprocessing and computes QS_best scores
+    for each model. Results are written to a single output file containing all models
+    and their interface pair scores.
+    """
     # Override the global constant with the passed parameter
     global CA_DISTANCE_PREFILTER
     CA_DISTANCE_PREFILTER = ca_distance_prefilter
@@ -308,16 +356,6 @@ def save_qs_best(input_dir, target, name, output_dir, cutoff=10, n_cpu=48, ca_di
 
 
 
-    # rp = open('step8/' + target + '.result','w')
-    # for process in processes:
-    #     [model, all_results] = process.get()
-    #     for result in all_results:
-    #         category = result[0]
-    #         chain1 = result[1]
-    #         chain2 = result[2]
-    #         for item in result[3]:
-    #             rp.write(model + '\t' + category + '\t' + chain1 + ':' + chain2 + '\t' + item[0] + ':' + item[1] + '\t' + str(item[2]) + '\n')
-    # rp.close()
 
 
 if __name__ == "__main__":

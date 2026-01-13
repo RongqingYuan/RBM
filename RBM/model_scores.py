@@ -1,3 +1,11 @@
+"""
+Calculate per-model scores from per-interface scores.
+
+This module aggregates interface-level scores (IPS, ICS, QS_best, DockQ, lDDT, TM-score)
+into model-level scores using weighted averaging. Multiple versions (v1, v2, v3) implement
+different strategies for combining reference and prediction interface scores.
+"""
+
 import sys
 import math
 import os
@@ -6,6 +14,13 @@ from utils import get_models
 
 
 def get_weighted_average(scores):
+    """
+    Calculate weighted average for multiple score types.
+    
+    Takes a list of score entries, each containing a weight and six score values
+    (IPS, ICS, QS_best, DockQ, lDDT, TM-score). Returns the weighted average
+    for each score type.
+    """
     weight = []
     ips = []
     ics = []
@@ -30,6 +45,13 @@ def get_weighted_average(scores):
     return [ave_ips, ave_ics, ave_qsbest, ave_dockq, ave_lddt, ave_tm]
 
 def save_model_scores_v1(input_dir, target, name, output_dir, interface_weight):
+    """
+    Calculate and save per-model scores using v1 aggregation method (average of both directions).
+    
+    Reads per-interface scores and calculates weighted averages separately for
+    reference (REF) and prediction (MOD) interfaces. The final model score is the
+    average of REF and MOD scores. Missing MOD scores are set to 0.0.
+    """
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/per_interface_scores/' + target + '.result', 'r')
     model2Rscores = {}
@@ -91,6 +113,13 @@ def save_model_scores_v1(input_dir, target, name, output_dir, interface_weight):
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\t' + str(lddt) + '\t' + str(tm) + '\n')
     rp.close()
 def save_model_scores_v2(input_dir, target, name, output_dir, interface_weight):
+    """
+    Calculate and save per-model scores using v2 aggregation method (all interfaces together).
+    
+    Reads per-interface scores and combines all REF and MOD interfaces together,
+    then calculates a single weighted average across all interfaces. This treats
+    reference and prediction interfaces equally in the aggregation.
+    """
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/per_interface_scores/' + target + '.result', 'r')
     model2Rscores = {}
@@ -149,6 +178,14 @@ def save_model_scores_v2(input_dir, target, name, output_dir, interface_weight):
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\t' + str(lddt) + '\t' + str(tm) + '\n')
     rp.close()
 def save_model_scores_v3(input_dir, target, name, output_dir, interface_weight):
+    """
+    Calculate and save per-model scores using v3 aggregation method (minimum score).
+    
+    Reads per-interface scores and calculates weighted averages separately for
+    reference (REF) and prediction (MOD) interfaces. The final model score is the
+    minimum of REF and MOD scores, penalizing models that perform poorly on either
+    reference or prediction interfaces.
+    """
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/per_interface_scores/' + target + '.result', 'r')
     model2Rscores = {}
@@ -209,6 +246,8 @@ def save_model_scores_v3(input_dir, target, name, output_dir, interface_weight):
             tm = round(min(Rtm, Mtm), 4)
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\t' + str(lddt) + '\t' + str(tm) + '\n')
     rp.close()
+
+    
 # if __name__ == "__main__":
 #     input_dir = sys.argv[1]
 #     target = sys.argv[2]

@@ -1,3 +1,12 @@
+"""
+Calculate per-model scores for antibody structures.
+
+This module aggregates interface-level scores specifically for antibody-antigen
+interfaces. It filters interfaces based on antibody chain IDs (chainAs and chainBs)
+and calculates model-level scores using weighted averaging. Only uses a subset
+of scores (IPS, ICS, QS_best, DockQ) suitable for antibody evaluation.
+"""
+
 import os
 import sys
 import math
@@ -6,6 +15,12 @@ from utils import get_models
 
 
 def get_weighted_average(scores):
+    """
+    Calculate weighted average for antibody score types.
+    
+    Takes a list of score entries, each containing a weight and four score values
+    (IPS, ICS, QS_best, DockQ). Returns the weighted average for each score type.
+    """
     weight = []
     ips = []
     ics = []
@@ -24,6 +39,14 @@ def get_weighted_average(scores):
     return [ave_ips, ave_ics, ave_qsbest, ave_dockq]
 
 def save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs):
+    """
+    Calculate and save per-model scores for antibody structures (average method).
+    
+    Filters per-interface scores to only include antibody-antigen interfaces
+    based on chain IDs. Calculates weighted averages separately for reference (REF)
+    and prediction (MOD) interfaces. The final model score is the average of REF
+    and MOD scores. Uses log10 weighting for interface sizes.
+    """
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/' + 'per_interface_scores' + '/' + target + '.result', 'r')
     model2Rscores = {}
@@ -95,6 +118,14 @@ def save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs):
     rp.close()
 
 def save_antibody_scores_v3(input_dir, target, name, output_dir, chainAs, chainBs):
+    """
+    Calculate and save per-model scores for antibody structures (minimum method).
+    
+    Filters per-interface scores to only include antibody-antigen interfaces
+    based on chain IDs. Calculates weighted averages separately for reference (REF)
+    and prediction (MOD) interfaces. The final model score is the minimum of REF
+    and MOD scores, penalizing models that perform poorly on either direction.
+    """
     models = get_models(input_dir, target, name)
     fp = open(output_dir + '/' + target + '/' + 'per_interface_scores' + '/' + target + '.result', 'r')
     model2Rscores = {}
