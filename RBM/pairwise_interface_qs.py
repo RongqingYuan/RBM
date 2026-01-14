@@ -12,7 +12,7 @@ import os
 import numpy as np
 from itertools import permutations
 from multiprocessing import Pool
-from utils import get_models
+from .utils import get_models
 
 
 # CA distance pre-filter for computational optimization (Angstroms)

@@ -8,7 +8,7 @@ for each interface pair and identifies the best matching interface pairs based o
 import os
 import sys
 import numpy as np
-from utils import get_models
+from .utils import get_models
 
 
 def get_pair2scores(model, target, model2qsbest, output_dir):

@@ -11,7 +11,7 @@ import json
 from itertools import permutations
 from multiprocessing import Pool
 import os
-from utils import get_models
+from .utils import get_models
 
 def get_Rchain2resids(input_dir, target, name):
     """
