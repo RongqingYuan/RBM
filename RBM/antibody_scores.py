@@ -11,7 +11,7 @@ import os
 import sys
 import math
 import numpy as np
-from utils import get_models
+from .utils import get_models
 
 
 def get_weighted_average(scores):

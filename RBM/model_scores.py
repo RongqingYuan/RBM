@@ -9,7 +9,7 @@ different strategies for combining reference and prediction interface scores.
 import sys
 import math
 import os
-from utils import get_models
+from .utils import get_models
 
 
 

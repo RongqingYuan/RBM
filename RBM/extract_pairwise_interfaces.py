@@ -10,7 +10,7 @@ import os
 import sys
 import json
 from multiprocessing import Pool
-from utils import get_models
+from .utils import get_models
 
 
 # ============================================================================
