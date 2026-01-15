@@ -1,13 +1,13 @@
 # Reciprocal Best Matching (RBM)
 
-A computational pipeline called Reciprocal Best Matching (RBM), which is designed for evaluating protein complex structure predictions with unknown stoichiometry during CASP16 assessment.
+Reciprocal Best Matching (RBM) is a computational pipeline called designed for evaluating protein complex structure predictions with unknown stoichiometry during CASP16 assessment.
 
 
 ## Overview
 
 We developed and used RBM in our assessment of CASP16 Phase 0 challenge, in which stoichiometry information is not provided to the predictors. This pipeline provides an unbiased evaluation method that:
 - Penalizes both over-prediction and under-prediction of subunits
-- Maintains strong correlation with established CASP metrics
+- Maintains strong correlation with established CASP scores
 - Integrates with existing CASP assessment pipelines in regular challenges
 - Can be extended to any scores that assess a binary protein pair.
 
@@ -117,7 +117,7 @@ Results are saved in `output_dir/model_name/`:
 
 - **Per-interface scores**: `model_name.interface_scores` (tab-separated file with IPS, ICS, QS, DockQ, lDDT, TM-score for each interface)
 - **Final RBM score**: `model_name.model_scores` (final model evaluation)
-- **Individual metric files**: `model_name.ips`, `model_name.ics`, `model_name.qs`, `model_name.dockq`, `model_name.lddt`, `model_name.tm`
+- **Individual score files**: `model_name.ips`, `model_name.ics`, `model_name.qs`, `model_name.dockq`, `model_name.lddt`, `model_name.tm`
 
 Temporary interface files are stored in `interface_tmp/` and automatically removed after completion (use `--keep_tmp` to preserve them).
 
