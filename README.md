@@ -31,6 +31,8 @@ pip install DockQ
 conda install -c conda-forge -c bioconda lddt tmalign
 ```
 
+**Important**: If you have not added DockQ, lDDT, and TMscore to your PATH, you must provide their full paths using `--dockq_path`, `--lddt_path`, and `--tmscore_path` arguments when running the pipeline.
+
 ## Input Requirements
 
 The pipeline now uses a **file-based approach** where you specify individual file paths instead of directory structures. You need to provide:
@@ -61,8 +63,13 @@ python main.py \
   --ost_json ./input_example/H0208/ost/H0208TS014_1.json \
   --output_dir ./output_example \
   --target_name H0208 \
-  --model_name H0208TS014_1
+  --model_name H0208TS014_1 \
+  --dockq_path /path/to/DockQ \
+  --lddt_path /path/to/lddt \
+  --tmscore_path /path/to/TMscore
 ```
+
+Note: The tool paths (`--dockq_path`, `--lddt_path`, `--tmscore_path`) are only needed if these tools are not in your system PATH.
 
 ### Required Arguments
 
