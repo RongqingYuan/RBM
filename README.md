@@ -18,101 +18,82 @@ Our pipeline requires the following software:
 - [lDDT](https://anaconda.org/bioconda/lddt)
 - [TMscore](https://github.com/pylelab/USalign)
 
-```
+```bash
+# Create and activate a conda environment
+conda create -n rbm python=3.9
+conda activate rbm
+
+# Install required packages
+
 pip install DockQ
 conda install -c conda-forge -c bioconda lddt tmalign
 ```
 
-## Input Example
+## Input Requirements
 
-To execute the pipeline, target structure, model structures, a list of models, and the OST raw results need to be provided. The directory structure should be as follows:
+The pipeline now uses a **file-based approach** where you specify individual file paths instead of directory structures. You need to provide:
 
-
-```
-input/
-└── H0208/                                    # Target directory (target name)
-    ├── H0208.pdb                             # Reference structure (1 file)
-    ├── H0208.txt                             # Model list file (in our case, this file is from the prediction center)
-    ├── model/                                # Model structures directory
-    │   ├── H0208TS014_1                      # Model file (in PDB format)
-    │   ├── H0208TS014_2                      ......
-    │   ├── H0208TS014_3                      ......
-    │   ├── ...                               
-    │   └── H0208TS331_5                      ......
-    └── ost/                                  # OpenStructure results
-        ├── H0208TS014_1.json                 # OST comparison result for model 1
-        ├── H0208TS014_2.json                 ......
-        ├── H0208TS014_3.json                 ......
-        ├── H0208TS022_2.json                 ......
-        ├── ...                               
-        └── H0208TS331_5.json                 ......
-```
-
+1. **Reference PDB file**: The target/reference structure
+2. **Model PDB file**: The predicted model structure
+3. **OST JSON file**: OpenStructure comparison results containing chain mappings and contacts
 
 ## Usage
 
 Basic usage:
 
 ```bash
-python main.py --input_dir <input_directory> \
-               --target <target_name> \
-               --name <structure_name> \
-               --output_dir <output_directory> \
-               [optional arguments]
+python main.py \
+  --reference_pdb <path/to/reference.pdb> \
+  --model_pdb <path/to/model.pdb> \
+  --ost_json <path/to/ost_comparison.json> \
+  --output_dir <output_directory> \
+  --target_name <target_name>
+```
+
+### Example
+
+```bash
+python main.py \
+  --reference_pdb ./data/H0208/H0208.pdb \
+  --model_pdb ./data/H0208/model/H0208TS014_1 \
+  --ost_json ./data/H0208/ost/H0208TS014_1.json \
+  --output_dir ./results \
+  --target_name H0208 \
+  --model_name H0208TS014_1
 ```
 
 ### Required Arguments
 
-- `--input_dir`: Directory containing input data.
-- `--target`: Target name provided by CASP organizers.
-- `--name`: Name of the input structure used in the assessment stage.
-- `--output_dir`: Directory for output files.
+- `--reference_pdb`: Path to reference/target PDB file
+- `--model_pdb`: Path to model PDB file
+- `--ost_json`: Path to OpenStructure (OST) JSON file with chain mappings and contacts
+- `--output_dir`: Directory for output files
+- `--target_name`: Target name for organizing output files (e.g., H0208)
 
 ### Optional Arguments
 
-- `--qs_cutoff`: Cutoff for QS_best (default: 10)
+- `--model_name`: Model name to use in output files (default: basename of model_pdb)
 - `--dockq_path`: Path to DockQ executable (default: "DockQ")
 - `--lddt_path`: Path to lDDT executable (default: "lddt")
-- `--tmscore_path`: Path to TMscore executable (default: "TMscore")
-- `--scores`: Choose 1-6 scores from: ICS, IPS, QS_best, DockQ, lDDT, TMscore (default: ICS, IPS, QS_best, DockQ, lDDT, TMscore)
-- `--n_cpu`: Number of CPU cores to use (some software are computationally intensive, so multi-processing is necessary) (default: 48)
+- `--tmscore_path`: Path to TMscore executable (default: "/home2/s439906/software/USalign/TMscore")
+- `--scores`: Choose 1-6 scores from: ICS, IPS, QS_best, DockQ, lDDT, TMscore (default: all)
 - `--antibody`: Flag for antibody structure analysis
-- `--chainAs`: Chain IDs for the antibody component
-- `--chainBs`: Chain IDs for the antigen component
+- `--chainAs`: Chain IDs for the antibody component (for antibody mode)
+- `--chainBs`: Chain IDs for the antigen component (for antibody mode)
 - `--rbm_version`: RBM scoring version ('min', 'all', or 'average', default: 'min'. For more details, please refer to our paper)
 - `--interface_weight`: Interface weighting method ('log2', 'log10', or 'linear', default: 'log10'. For more details, please refer to our paper)
+- `--keep_tmp`: Keep temporary interface files in interface_tmp directory (default: False, will remove after completion)
 
 
-## Output Example
+## Output
 
-The pipeline generates:
-- Interface quality scores (ICS, IPS, QS_best)
-- Structural similarity metrics (DockQ, lDDT, TM-score)
-- Per-interface evaluation results
-- Per-model evaluation results
+Results are saved in `output_dir/model_name/`:
 
-```
-output/
-└── H0208/
-    ├── IPS/                              # Interface Patch Similarity scores
-    │   ├── H0208TS014_1.result              # Per-interface IPS for each model
-    │   └── ...
-    ├── ICS/                              # Interface Contact Similarity scores
-    │   ├── H0208TS014_1.result              # Per-interface ICS for each model
-    │   └── ...
-    ├── QS_best/                          # QS-score (best match)
-    │   └── H0208.result         # All models combined
-    ├── DockQ/                            # DockQ scores
-    │   └── H0208.result         # All models combined
-    ├── lDDT/                             # Local Distance Difference Test
-    │   └── H0208.result         # All models combined
-    ├── TMscore/                          # TM-score (structure alignment)
-    │   └── H0208.result         # All models combined
-    ├── per_interface_scores/             # Consolidated per-interface scores
-    │   └── H0208.result         # Best scores for each interface
-    └── per_model_scores_v3/              # Final model rankings (v3, recommended)
-        └── H0208.result
-```
+- **Per-interface scores**: `model_name.interface_scores` (tab-separated file with IPS, ICS, QS, DockQ, lDDT, TM-score for each interface)
+- **Final RBM score**: `model_name.model_scores` (final model evaluation)
+- **Individual metric files**: `model_name.ips`, `model_name.ics`, `model_name.qs`, `model_name.dockq`, `model_name.lddt`, `model_name.tm`
+
+Temporary interface files are stored in `interface_tmp/` and automatically removed after completion (use `--keep_tmp` to preserve them).
 
 ## Citation
 
