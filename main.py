@@ -51,7 +51,7 @@ if __name__ == "__main__":
                        help='Path to DockQ executable (default: DockQ)')
     parser.add_argument('--lddt_path', type=str, default="lddt",
                        help='Path to lDDT executable (default: lddt)')
-    parser.add_argument('--tmscore_path', type=str, default="/home2/s439906/software/USalign/TMscore",
+    parser.add_argument('--tmscore_path', type=str, default="TMscore",
                        help='Path to TMscore executable (default: TMscore)')
     
     # Optional arguments
