@@ -12,81 +12,7 @@ import os
 import numpy as np
 from itertools import permutations
 from multiprocessing import Pool
-from .utils import get_model_name_from_path
-
-
-# CA distance pre-filter for computational optimization (Angstroms)
-CA_DISTANCE_PREFILTER = 20.0
-
-
-def get_Rchain2resids_and_Rcontacts(reference_pdb_path, cutoff):
-    """
-    Extract residue IDs and contacts from the reference PDB file.
-    
-    Parses the reference PDB file to collect residue coordinates and identify
-    inter-chain contacts based on distance cutoff. Uses CA distance pre-filtering
-    for computational efficiency before calculating minimum atom distances.
-    
-    Args:
-        reference_pdb_path: Full path to the reference PDB file
-        cutoff: Distance cutoff in Angstroms for identifying contacts
-    """
-    fp = open(reference_pdb_path, 'r')
-    Rchains = []
-    Rresid2CAcoor = {}
-    Rresid2coors = {}
-    all_Rcontacts = []
-    Rchain2resids = {}
-    for line in fp:
-        if len(line) > 60:
-            if line[:4] == 'ATOM':
-                resid = int(line[22:26])
-                chain = line[21]
-                x = float(line[30:38])
-                y = float(line[38:46])
-                z = float(line[46:54])
-                atom = line[12:16].strip()
-                element = line[76:78].strip()
-                try:
-                    Rchain2resids[chain].add(resid)
-                    Rresid2coors[chain]
-                    Rresid2CAcoor[chain]
-                except KeyError:
-                    Rchains.append(chain)
-                    Rchain2resids[chain] = set([resid])
-                    Rresid2coors[chain] = {}
-                    Rresid2CAcoor[chain] = {}
-                if atom == 'CA':
-                    Rresid2CAcoor[chain][resid] = [x, y, z]
-                if element != 'H':
-                    try:
-                        Rresid2coors[chain][resid].append([x, y, z])
-                    except KeyError:
-                        Rresid2coors[chain][resid] = [[x, y, z]]
-    fp.close()
-
-    Rchains.sort()
-    for c1, chain1 in enumerate(Rchains):
-        for c2, chain2 in enumerate(Rchains):
-            if c1 < c2:
-                for resid1 in Rchain2resids[chain1]:
-                    for resid2 in Rchain2resids[chain2]:
-                        CAcoor1 = Rresid2CAcoor[chain1][resid1]
-                        CAcoor2 = Rresid2CAcoor[chain2][resid2]
-                        CAdist = ((CAcoor1[0] - CAcoor2[0]) ** 2 + (CAcoor1[1] - CAcoor2[1]) ** 2 + (CAcoor1[2] - CAcoor2[2]) ** 2) ** 0.5
-                        if CAdist < CA_DISTANCE_PREFILTER:
-                            coor1s = Rresid2coors[chain1][resid1]
-                            coor2s = Rresid2coors[chain2][resid2]
-                            dists = []
-                            for coor1 in coor1s:
-                                for coor2 in coor2s:
-                                    dist = ((coor1[0] - coor2[0]) ** 2 + (coor1[1] - coor2[1]) ** 2 + (coor1[2] - coor2[2]) ** 2) ** 0.5
-                                    dists.append(dist)
-                            mindist = min(dists)
-                            if mindist <= cutoff:
-                                all_Rcontacts.append([chain1 + '.' + str(resid1), chain2 + '.' + str(resid2)])
-
-    return Rchain2resids, all_Rcontacts
+from .utils import get_model_name_from_path, parse_reference_pdb
 
 
 def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, cutoff):
@@ -119,7 +45,7 @@ def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, c
         tuple: (model_name, all_results) where all_results contains interface pairs
                and their QS_best scores organized by category
     """
-    Rchain2resids, all_Rcontacts = get_Rchain2resids_and_Rcontacts(reference_pdb_path, cutoff)
+    Rchain2resids, all_Rcontacts, _ = parse_reference_pdb(reference_pdb_path, cutoff)
     with open(ost_json_path, 'r') as file:
         data = json.load(file)
 

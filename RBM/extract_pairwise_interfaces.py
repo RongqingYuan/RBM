@@ -10,7 +10,7 @@ import os
 import sys
 import json
 from multiprocessing import Pool
-from .utils import get_model_name_from_path
+from .utils import get_model_name_from_path, parse_reference_pdb
 
 
 # ============================================================================
@@ -20,36 +20,6 @@ from .utils import get_model_name_from_path
 # Score filter ratio: only keep interface matches where at least one score
 # is greater than (best_score * SCORE_FILTER_RATIO)
 SCORE_FILTER_RATIO = 0.5
-
-
-
-def get_Rchain2resids_and_Rchain2lines(reference_pdb_path):
-    """
-    Extract residue IDs and PDB lines for each chain from reference structure.
-    
-    Parses the reference PDB file to collect residue IDs and store all ATOM
-    lines for each chain. Returns both the residue sets and the original PDB lines
-    needed for writing interface structures.
-    
-    Args:
-        reference_pdb_path: Full path to the reference PDB file
-    """
-    fp = open(reference_pdb_path, 'r')
-    Rchain2lines = {}
-    Rchain2resids = {}
-    for line in fp:
-        if len(line) > 60:
-            if line[:4] == 'ATOM':
-                resid = int(line[22:26])
-                chain = line[21]
-                try:
-                    Rchain2resids[chain].add(resid)
-                    Rchain2lines[chain].append(line)
-                except KeyError:
-                    Rchain2resids[chain] = set([resid])
-                    Rchain2lines[chain] = [line]
-    fp.close()
-    return Rchain2resids, Rchain2lines
 
 
 def get_model2qsbest(model_name, output_dir):
@@ -148,7 +118,7 @@ def process_model(reference_pdb_path, model_pdb_path, model_name, output_dir):
         model_name: Model name to use in output
         output_dir: Path to output directory (will use output_dir/model_name/)
     """
-    Rchain2resids, Rchain2lines = get_Rchain2resids_and_Rchain2lines(reference_pdb_path)
+    Rchain2resids, _, Rchain2lines = parse_reference_pdb(reference_pdb_path)
     model2qsbest = get_model2qsbest(model_name, output_dir)
     pair2results = get_pair2scores(model_name, model2qsbest, output_dir)
     cases = set([])
@@ -274,7 +244,7 @@ def process_model_same_chain(reference_pdb_path, model_pdb_path, model_name, out
         model_name: Model name to use in output
         output_dir: Path to output directory (will use output_dir/model_name/)
     """
-    Rchain2resids, Rchain2lines = get_Rchain2resids_and_Rchain2lines(reference_pdb_path)
+    Rchain2resids, _, Rchain2lines = parse_reference_pdb(reference_pdb_path)
     model2qsbest = get_model2qsbest(model_name, output_dir)
     pair2results = get_pair2scores(model_name, model2qsbest, output_dir)
     cases = set([])

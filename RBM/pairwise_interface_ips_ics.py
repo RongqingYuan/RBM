@@ -11,28 +11,7 @@ import json
 from itertools import permutations
 from multiprocessing import Pool
 import os
-from .utils import get_model_name_from_path
-
-def get_Rchain2resids(reference_pdb_path):
-    """
-    Extract residue IDs for each chain from the reference (target) PDB file.
-    
-    Args:
-        reference_pdb_path: Full path to the reference PDB file
-    """
-    fp = open(reference_pdb_path, 'r')
-    Rchain2resids = {}
-    for line in fp:
-        if len(line) > 60:
-            if line[:4] == 'ATOM':
-                resid = int(line[22:26])
-                chain = line[21]
-                try:
-                    Rchain2resids[chain].add(resid)
-                except KeyError:
-                    Rchain2resids[chain] = set([resid])
-    fp.close()
-    return Rchain2resids
+from .utils import get_model_name_from_path, parse_reference_pdb
 
 def get_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir):
     """
@@ -73,7 +52,7 @@ def get_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir):
         Each file contains interface pairs with their corresponding scores.
         Format: '>category chain1:chain2 size1:size2' followed by match results.
     """
-    Rchain2resids = get_Rchain2resids(reference_pdb_path)
+    Rchain2resids, _, _ = parse_reference_pdb(reference_pdb_path)
     with open(ost_json_path, 'r') as file:
         data = json.load(file)
     ref_chem_groups = data["chem_groups"]
