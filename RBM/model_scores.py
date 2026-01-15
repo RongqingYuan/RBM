@@ -54,7 +54,7 @@ def save_model_scores_v1(model_name, output_dir, interface_weight):
     Args:
         model_name: Model name to process
         output_dir: Path to output directory (will use output_dir/model_name/)
-        interface_weight: Weighting method ('log2', 'log10', or 'linear')
+        interface_weight: Weighting method ('log10' or 'linear')
     """
     models = [model_name]
     model_output_dir = os.path.join(output_dir, model_name)
@@ -65,9 +65,7 @@ def save_model_scores_v1(model_name, output_dir, interface_weight):
         if countl:
             words = line.split()
             model = words[0]
-            if interface_weight == 'log2':
-                weight = math.log2(float(words[4]))
-            elif interface_weight == 'log10':
+            if interface_weight == 'log10':
                 weight = math.log10(float(words[4]))
             elif interface_weight == 'linear':
                 weight = float(words[4])
@@ -127,7 +125,7 @@ def save_model_scores_v2(model_name, output_dir, interface_weight):
     Args:
         model_name: Model name to process
         output_dir: Path to output directory (will use output_dir/model_name/)
-        interface_weight: Weighting method ('log2', 'log10', or 'linear')
+        interface_weight: Weighting method ('log10' or 'linear')
     """
     models = [model_name]
     model_output_dir = os.path.join(output_dir, model_name)
@@ -138,9 +136,7 @@ def save_model_scores_v2(model_name, output_dir, interface_weight):
         if countl:
             words = line.split()
             model = words[0]
-            if interface_weight == 'log2':
-                weight = math.log2(float(words[4]))
-            elif interface_weight == 'log10':
+            if interface_weight == 'log10':
                 weight = math.log10(float(words[4]))
             elif interface_weight == 'linear':
                 weight = float(words[4])
@@ -198,7 +194,7 @@ def save_model_scores_v3(model_name, output_dir, interface_weight):
     Args:
         model_name: Model name to process
         output_dir: Path to output directory (will use output_dir/model_name/)
-        interface_weight: Weighting method ('log2', 'log10', or 'linear')
+        interface_weight: Weighting method ('log10' or 'linear')
     """
     models = [model_name]
     model_output_dir = os.path.join(output_dir, model_name)
@@ -209,9 +205,7 @@ def save_model_scores_v3(model_name, output_dir, interface_weight):
         if countl:
             words = line.split()
             model = words[0]
-            if interface_weight == 'log2':
-                weight = math.log2(float(words[4]))
-            elif interface_weight == 'log10':
+            if interface_weight == 'log10':
                 weight = math.log10(float(words[4]))
             elif interface_weight == 'linear':
                 weight = float(words[4])

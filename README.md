@@ -81,7 +81,7 @@ python main.py \
 - `--chainAs`: Chain IDs for the antibody component (for antibody mode)
 - `--chainBs`: Chain IDs for the antigen component (for antibody mode)
 - `--rbm_version`: RBM scoring version ('min', 'all', or 'average', default: 'min'. For more details, please refer to our paper)
-- `--interface_weight`: Interface weighting method ('log2', 'log10', or 'linear', default: 'log10'. For more details, please refer to our paper)
+- `--interface_weight`: Interface weighting method ('log10' or 'linear', default: 'log10'. For more details, please refer to our paper)
 - `--keep_tmp`: Keep temporary interface files in interface_tmp directory (default: False, will remove after completion)
 
 
