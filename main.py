@@ -68,6 +68,8 @@ if __name__ == "__main__":
                        help='RBM version: min, all, or average (default: min)')
     parser.add_argument('--interface_weight', type=str, choices=['log2', 'log10', 'linear'], default='log10',
                        help='Weighting method: log2, log10, or linear (default: log10)')
+    parser.add_argument('--keep_tmp', action='store_true',
+                       help='Keep temporary interface files in interface_tmp directory (default: False, will remove after completion)')
 
     args = parser.parse_args()
     
@@ -87,6 +89,7 @@ if __name__ == "__main__":
     rbm_version = args.rbm_version
     interface_weight = args.interface_weight
     scores = args.scores
+    keep_tmp = args.keep_tmp
     
     # Verify input files exist
     if not os.path.exists(reference_pdb_path):
@@ -162,3 +165,13 @@ if __name__ == "__main__":
             print("="*60)
         else:
             raise ValueError("Please provide valid chainAs and chainBs for antibody mode")
+    
+    # Cleanup temporary interface files if requested
+    if not keep_tmp:
+        import shutil
+        interface_tmp_dir = os.path.join(output_dir, model_name, 'interface_tmp')
+        if os.path.exists(interface_tmp_dir):
+            print()
+            print("Cleaning up temporary interface files...")
+            shutil.rmtree(interface_tmp_dir)
+            print(f"  Removed: {interface_tmp_dir}")

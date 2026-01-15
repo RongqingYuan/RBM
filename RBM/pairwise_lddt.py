@@ -21,9 +21,10 @@ def get_lddt_scores(model_name, output_dir):
         output_dir: Path to output directory (will use output_dir/model_name/)
     """
     model_output_dir = os.path.join(output_dir, model_name)
-    pairwise_lddt_dir = os.path.join(model_output_dir, 'pairwise_interfaces_for_lddt')
+    interface_tmp_dir = os.path.join(model_output_dir, 'interface_tmp')
+    pairwise_lddt_dir = os.path.join(interface_tmp_dir, 'pairwise_interfaces_for_lddt')
     
-    fp = open(os.path.join(model_output_dir, 'pairwise_interfaces_for_lddt.list'), 'r')
+    fp = open(os.path.join(interface_tmp_dir, 'pairwise_interfaces_for_lddt.list'), 'r')
     cases = []
     for line in fp:
         words = line.split()

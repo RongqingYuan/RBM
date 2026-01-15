@@ -27,30 +27,53 @@ def get_pair2scores(model_name, model2qsbest, output_dir):
     IPS_file = os.path.join(model_output_dir, model_name + '.ips')
     ICS_file = os.path.join(model_output_dir, model_name + '.ics')
     pair2results = {}
-    cate = ''
-    pair = ''
-    weight = 0
-    results = []
-    with open(IPS_file, 'r') as f1, open(ICS_file, 'r') as f2:
-        lines1 = f1.readlines()
-        lines2 = f2.readlines()
-        assert len(lines1) == len(lines2)
-        for line1, line2 in zip(lines1, lines2):
-            if line1[0] == '>':
-                if cate and pair and weight:
-                    pair2results[(cate, pair)] = [weight, results]
-                cate = line1[1:].split()[0]
-                pair = line1[1:].split()[1]
-                weight = (int(line1[1:].split()[2].split(':')[0]) + int(line1[1:].split()[2].split(':')[1])) / 2
-                results = []
-            else:
-                words1 = line1.split()
-                words2 = line2.split()
-                match_pair = words1[0] + ':' + words1[1]
-                qsbest = model2qsbest[model_name][(cate, pair, match_pair)]
-                results.append([words1[0], words1[1], float(words1[4]), float(words2[4]), qsbest])
-    if cate and pair and weight:
-        pair2results[(cate, pair)] = [weight, results]
+    
+    # Read IPS scores - new unified format: model_name category chainpair matchpair size1 size2 score
+    ips_data = {}
+    with open(IPS_file, 'r') as f:
+        for line in f:
+            parts = line.strip().split('\t')
+            # parts: [model_name, category, chainpair, matchpair, size1, size2, score]
+            category = parts[1]
+            chainpair = parts[2]
+            matchpair = parts[3]
+            size1 = int(parts[4])
+            size2 = int(parts[5])
+            score = float(parts[6])
+            key = (category, chainpair, matchpair)
+            ips_data[key] = {'score': score, 'size1': size1, 'size2': size2}
+    
+    # Read ICS scores - new unified format: model_name category chainpair matchpair size1 size2 score
+    ics_data = {}
+    with open(ICS_file, 'r') as f:
+        for line in f:
+            parts = line.strip().split('\t')
+            category = parts[1]
+            chainpair = parts[2]
+            matchpair = parts[3]
+            score = float(parts[6])
+            key = (category, chainpair, matchpair)
+            ics_data[key] = score
+    
+    # Combine IPS and ICS data
+    for key in ips_data:
+        category, chainpair, matchpair = key
+        ips_score = ips_data[key]['score']
+        ics_score = ics_data.get(key, 0.0)
+        size1 = ips_data[key]['size1']
+        size2 = ips_data[key]['size2']
+        weight = (size1 + size2) / 2
+        
+        # Get QS_best score
+        match_chain1, match_chain2 = matchpair.split(':')
+        qsbest = model2qsbest[model_name][(category, chainpair, matchpair)]
+        
+        # Store in pair2results
+        if (category, chainpair) not in pair2results:
+            pair2results[(category, chainpair)] = [weight, []]
+        
+        pair2results[(category, chainpair)][1].append([match_chain1, match_chain2, ips_score, ics_score, qsbest])
+    
     return pair2results
 
 

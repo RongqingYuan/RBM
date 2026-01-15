@@ -273,7 +273,7 @@ def get_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir):
     if not os.path.exists(model_output_dir):
         os.makedirs(model_output_dir)
     
-    # Write IPS results
+    # Write IPS results in unified format (matching QS format with interface sizes)
     rp = open(os.path.join(model_output_dir, model_name + '.ips'), 'w')
     for result in all_results:
         category = result[0]
@@ -281,12 +281,13 @@ def get_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir):
         chain2 = result[2]
         size1 = str(result[3])
         size2 = str(result[4])
-        rp.write('>' + category + ' ' + chain1 + ':' + chain2 + ' ' + size1 + ':' + size2 + '\n')
         for item in result[5]:
-            rp.write(item[0] + '\t' + item[1] + '\t' + str(item[2]) + '\t' + str(item[3]) + '\t' + str(item[4])  + '\n')
+            # Format: model_name category chainpair matchpair size1 size2 score
+            rp.write(model_name + '\t' + category + '\t' + chain1 + ':' + chain2 + '\t' + 
+                    item[0] + ':' + item[1] + '\t' + size1 + '\t' + size2 + '\t' + str(item[4]) + '\n')
     rp.close()
     
-    # Write ICS results
+    # Write ICS results in unified format (matching QS format with interface sizes)
     rp = open(os.path.join(model_output_dir, model_name + '.ics'), 'w')
     for result in all_results:
         category = result[0]
@@ -294,9 +295,10 @@ def get_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir):
         chain2 = result[2]
         size1 = str(result[3])
         size2 = str(result[4])
-        rp.write('>' + category + ' ' + chain1 + ':' + chain2 + ' ' + size1 + ':' + size2 + '\n')
         for item in result[5]:
-            rp.write(item[0] + '\t' + item[1] + '\t' + str(item[2]) + '\t' + str(item[3]) + '\t' + str(item[5])  + '\n')
+            # Format: model_name category chainpair matchpair size1 size2 score
+            rp.write(model_name + '\t' + category + '\t' + chain1 + ':' + chain2 + '\t' + 
+                    item[0] + ':' + item[1] + '\t' + size1 + '\t' + size2 + '\t' + str(item[5]) + '\n')
     rp.close()
     return 0
 

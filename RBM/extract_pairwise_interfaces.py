@@ -88,28 +88,48 @@ def get_pair2scores(model_name, model2qsbest, output_dir):
     IPS_file = os.path.join(output_dir, model_name, model_name + '.ips')
     ICS_file = os.path.join(output_dir, model_name, model_name + '.ics')
     pair2results = {}
-    cate = ''
-    pair = ''
-    results = []
-    with open(IPS_file, 'r') as f1, open(ICS_file, 'r') as f2:
-        lines1 = f1.readlines()
-        lines2 = f2.readlines()
-        assert len(lines1) == len(lines2)
-        for line1, line2 in zip(lines1, lines2):
-            if line1[0] == '>':
-                if cate and pair and results:
-                    pair2results[(cate, pair)] = results
-                cate = line1[1:].split()[0]
-                pair = line1[1:].split()[1].replace(':','-')
-                results = []
-            else:
-                words1 = line1.split()
-                words2 = line2.split()
-                match_pair = words1[0] + '-' + words1[1]
-                qsbest = model2qsbest[model_name][(cate, pair, match_pair)]
-                results.append([words1[0], words1[1], float(words1[4]), float(words2[4]), qsbest])
-    if cate and pair and results:
-        pair2results[(cate, pair)] = results
+    
+    # Read IPS scores - new unified format: model_name category chainpair matchpair size1 size2 score
+    ips_data = {}
+    with open(IPS_file, 'r') as f:
+        for line in f:
+            parts = line.strip().split('\t')
+            # parts: [model_name, category, chainpair, matchpair, size1, size2, score]
+            category = parts[1]
+            chainpair = parts[2].replace(':', '-')
+            matchpair = parts[3].replace(':', '-')
+            score = float(parts[6])
+            key = (category, chainpair, matchpair)
+            ips_data[key] = score
+    
+    # Read ICS scores - new unified format: model_name category chainpair matchpair size1 size2 score
+    ics_data = {}
+    with open(ICS_file, 'r') as f:
+        for line in f:
+            parts = line.strip().split('\t')
+            category = parts[1]
+            chainpair = parts[2].replace(':', '-')
+            matchpair = parts[3].replace(':', '-')
+            score = float(parts[6])
+            key = (category, chainpair, matchpair)
+            ics_data[key] = score
+    
+    # Combine IPS and ICS data
+    for key in ips_data:
+        category, chainpair, matchpair = key
+        ips_score = ips_data[key]
+        ics_score = ics_data.get(key, 0.0)
+        
+        # Get QS_best score
+        qsbest = model2qsbest[model_name][(category, chainpair, matchpair)]
+        
+        # Store in pair2results
+        if (category, chainpair) not in pair2results:
+            pair2results[(category, chainpair)] = []
+        
+        match_chain1, match_chain2 = matchpair.split('-')
+        pair2results[(category, chainpair)].append([match_chain1, match_chain2, ips_score, ics_score, qsbest])
+    
     return pair2results
 
 
@@ -170,8 +190,9 @@ def process_model(reference_pdb_path, model_pdb_path, model_name, output_dir):
                     Mchain2lines[chain] = [[resid, line]]
     fp.close()
     
-    # Create pairwise_interfaces directory in model output directory
-    pairwise_dir = os.path.join(output_dir, model_name, 'pairwise_interfaces')
+    # Create pairwise_interfaces directory in interface_tmp
+    interface_tmp_dir = os.path.join(output_dir, model_name, 'interface_tmp')
+    pairwise_dir = os.path.join(interface_tmp_dir, 'pairwise_interfaces')
     os.makedirs(pairwise_dir, exist_ok=True)
     
     need_cases = []
@@ -295,8 +316,9 @@ def process_model_same_chain(reference_pdb_path, model_pdb_path, model_name, out
                     Mchain2lines[chain] = [[resid, line]]
     fp.close()
 
-    # Create pairwise_interfaces_for_lddt directory in model output directory
-    pairwise_lddt_dir = os.path.join(output_dir, model_name, 'pairwise_interfaces_for_lddt')
+    # Create pairwise_interfaces_for_lddt directory in interface_tmp
+    interface_tmp_dir = os.path.join(output_dir, model_name, 'interface_tmp')
+    pairwise_lddt_dir = os.path.join(interface_tmp_dir, 'pairwise_interfaces_for_lddt')
     os.makedirs(pairwise_lddt_dir, exist_ok=True)
     
     need_cases = []
@@ -351,17 +373,19 @@ def save_pairwise_interfaces(reference_pdb_path, model_pdb_path, model_name, out
     global SCORE_FILTER_RATIO
     SCORE_FILTER_RATIO = score_filter_ratio
     
-    # Create model output directory
+    # Create model output directory and interface_tmp directory
     model_output_dir = os.path.join(output_dir, model_name)
+    interface_tmp_dir = os.path.join(model_output_dir, 'interface_tmp')
+    os.makedirs(interface_tmp_dir, exist_ok=True)
     
     # Process and save pairwise interfaces
-    with open(os.path.join(model_output_dir, 'pairwise_interfaces.list'), 'w') as f:
+    with open(os.path.join(interface_tmp_dir, 'pairwise_interfaces.list'), 'w') as f:
         model_name, need_cases = process_model(reference_pdb_path, model_pdb_path, model_name, output_dir)
         for case in need_cases:
             f.write(model_name + '\t' + case[0] + '\t' + case[1] + '\n')
     
     # Process and save pairwise interfaces for lDDT
-    with open(os.path.join(model_output_dir, 'pairwise_interfaces_for_lddt.list'), 'w') as f:
+    with open(os.path.join(interface_tmp_dir, 'pairwise_interfaces_for_lddt.list'), 'w') as f:
         model_name, need_cases = process_model_same_chain(reference_pdb_path, model_pdb_path, model_name, output_dir)
         for case in need_cases:
             f.write(model_name + '\t' + case[0] + '\t' + case[1] + '\n')

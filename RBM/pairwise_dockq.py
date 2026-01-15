@@ -21,9 +21,10 @@ def get_dockq_scores(model_name, output_dir):
         output_dir: Path to output directory (will use output_dir/model_name/)
     """
     model_output_dir = os.path.join(output_dir, model_name)
-    pairwise_dir = os.path.join(model_output_dir, 'pairwise_interfaces')
+    interface_tmp_dir = os.path.join(model_output_dir, 'interface_tmp')
+    pairwise_dir = os.path.join(interface_tmp_dir, 'pairwise_interfaces')
     
-    fp = open(os.path.join(model_output_dir, 'pairwise_interfaces.list'), 'r')
+    fp = open(os.path.join(interface_tmp_dir, 'pairwise_interfaces.list'), 'r')
     cases = []
     for line in fp:
         words = line.split()
