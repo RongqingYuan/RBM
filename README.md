@@ -41,6 +41,23 @@ The pipeline now uses a **file-based approach** where you specify individual fil
 2. **Model PDB file**: The model structure
 3. **OST JSON file**: OpenStructure comparison results containing `chem_groups`, `chem_mapping`, and `reference_contacts`, and `model_contacts`
 
+Note: this software needs to pre-compute chain mappings and contacts using [OpenStructure](https://git.scicore.unibas.ch/schwede/openstructure) (OST). An example command to pre-compute chain mappings and contacts is:
+
+```bash
+apptainer run \
+  -B <path/to/data>:/work/data \
+  -B <path/to/output>:/work/output \
+  /path/to/openstructure.sif \
+  compare-structures \
+    -m /work/data/<model_name>.pdb \
+    -mf pdb \
+    -r /work/data/<reference_name>.pdb \
+    -rf pdb \
+    -o /work/output/<model_name>.json \
+    --ics \
+    --ips \
+```
+
 ## Usage
 
 Basic usage:
