@@ -18,13 +18,15 @@ Our pipeline requires the following software:
 - [lDDT](https://anaconda.org/bioconda/lddt)
 - [TMscore](https://github.com/pylelab/USalign)
 
+Installation instructions:
+
 ```bash
 # Create and activate a conda environment
 conda create -n rbm python=3.9
 conda activate rbm
 
 # Install required packages
-
+pip install numpy
 pip install DockQ
 conda install -c conda-forge -c bioconda lddt tmalign
 ```
@@ -33,9 +35,9 @@ conda install -c conda-forge -c bioconda lddt tmalign
 
 The pipeline now uses a **file-based approach** where you specify individual file paths instead of directory structures. You need to provide:
 
-1. **Reference PDB file**: The target/reference structure
-2. **Model PDB file**: The predicted model structure
-3. **OST JSON file**: OpenStructure comparison results containing chain mappings and contacts
+1. **Reference PDB file**: The target(reference) structure
+2. **Model PDB file**: The model structure
+3. **OST JSON file**: OpenStructure comparison results containing `chem_groups`, `chem_mapping`, and `reference_contacts`, and `model_contacts`
 
 ## Usage
 
@@ -55,9 +57,9 @@ python main.py \
 ```bash
 python main.py \
   --reference_pdb ./data/H0208/H0208.pdb \
-  --model_pdb ./data/H0208/model/H0208TS014_1 \
-  --ost_json ./data/H0208/ost/H0208TS014_1.json \
-  --output_dir ./results \
+  --model_pdb ./input_example/H0208/model/H0208TS014_1 \
+  --ost_json ./input_example/H0208/ost/H0208TS014_1.json \
+  --output_dir ./output_example \
   --target_name H0208 \
   --model_name H0208TS014_1
 ```
