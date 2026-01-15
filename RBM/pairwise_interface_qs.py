@@ -12,22 +12,26 @@ import os
 import numpy as np
 from itertools import permutations
 from multiprocessing import Pool
-from .utils import get_models
+from .utils import get_model_name_from_path
 
 
 # CA distance pre-filter for computational optimization (Angstroms)
 CA_DISTANCE_PREFILTER = 20.0
 
 
-def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
+def get_Rchain2resids_and_Rcontacts(reference_pdb_path, cutoff):
     """
     Extract residue IDs and contacts from the reference PDB file.
     
     Parses the reference PDB file to collect residue coordinates and identify
     inter-chain contacts based on distance cutoff. Uses CA distance pre-filtering
     for computational efficiency before calculating minimum atom distances.
+    
+    Args:
+        reference_pdb_path: Full path to the reference PDB file
+        cutoff: Distance cutoff in Angstroms for identifying contacts
     """
-    fp = open(input_dir + '/' + target + '/' + name + '.pdb', 'r')
+    fp = open(reference_pdb_path, 'r')
     Rchains = []
     Rresid2CAcoor = {}
     Rresid2coors = {}
@@ -85,7 +89,7 @@ def get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff):
     return Rchain2resids, all_Rcontacts
 
 
-def get_qs_best(input_dir, target, name, model, cutoff):
+def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, cutoff):
     """
     Calculate QS_best score for a single model.
     
@@ -104,23 +108,28 @@ def get_qs_best(input_dir, target, name, model, cutoff):
     within the reference chain residue ranges are considered for model contacts.
     
     Args:
-        input_dir: Path to input directory containing target folders
-        target: Target name (folder name, e.g., 'H0208')
-        name: Name of the reference structure (usually same as target)
-        model: Model name to process (e.g., 'H0208TS014_1')
+        reference_pdb_path: Full path to reference PDB file
+        model_pdb_path: Full path to model PDB file
+        ost_json_path: Full path to OST JSON file with chain mappings and contacts
+        model_name: Model name to use in output (e.g., 'H0208TS014_1')
+        target: Target name for categorization (e.g., 'H0208')
         cutoff: Distance cutoff in Angstroms for identifying contacts
     
     Returns:
-        tuple: (model, all_results) where all_results contains interface pairs
+        tuple: (model_name, all_results) where all_results contains interface pairs
                and their QS_best scores organized by category
     """
-    Rchain2resids, all_Rcontacts = get_Rchain2resids_and_Rcontacts(input_dir, target, name, cutoff)
-    with open(input_dir + '/' + target + '/' + 'ost' + '/' + model + '.json', 'r') as file:
+    Rchain2resids, all_Rcontacts = get_Rchain2resids_and_Rcontacts(reference_pdb_path, cutoff)
+    with open(ost_json_path, 'r') as file:
         data = json.load(file)
 
     ref_chem_groups = data["chem_groups"]
     mod_chem_groups = data["chem_mapping"]
-    if target[0] == 'T':
+    
+    # Determine grouping strategy based on model name (T-series uses single group, H-series uses multiple)
+    use_single_group = model_name[0] == 'T' if model_name else False
+    
+    if use_single_group:
         groups = [[]]
         for i in range(len(ref_chem_groups)):
             if ref_chem_groups[i]:
@@ -161,7 +170,7 @@ def get_qs_best(input_dir, target, name, model, cutoff):
         except KeyError:
             Rpair2contacts[(chain2, chain1)] = set([(resid2, resid1)])
 
-    fp = open(input_dir + '/' + target + '/' + 'model' + '/' + model, 'r')
+    fp = open(model_pdb_path, 'r')
 
     Mchains = []
     Mresid2CAcoor = {}
@@ -321,37 +330,41 @@ def get_qs_best(input_dir, target, name, model, cutoff):
                     else:
                         map_results.append([Rchain1, Rchain2, 0.0])
         all_results.append(['prediction', Mchain1, Mchain2, map_results])
-    return model, all_results
+    return model_name, all_results
 
-def save_qs_best(input_dir, target, name, output_dir, cutoff=10, n_cpu=48, ca_distance_prefilter=20):
+def save_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, output_dir, cutoff=10, ca_distance_prefilter=20):
     """
-    Calculate and save QS_best scores for all models of a target.
+    Calculate and save QS_best scores for a single model.
     
-    Processes all models in parallel using multiprocessing and computes QS_best scores
-    for each model. Results are written to a single output file containing all models
-    and their interface pair scores.
+    Computes QS_best scores for the model and writes results to output file.
+    
+    Args:
+        reference_pdb_path: Full path to reference PDB file
+        model_pdb_path: Full path to model PDB file
+        ost_json_path: Full path to OST JSON file
+        model_name: Model name to use in output
+        output_dir: Path to output directory (will create output_dir/model_name/)
+        cutoff: Distance cutoff in Angstroms for identifying contacts (default: 10)
+        ca_distance_prefilter: CA distance pre-filter threshold (default: 20)
     """
     # Override the global constant with the passed parameter
     global CA_DISTANCE_PREFILTER
     CA_DISTANCE_PREFILTER = ca_distance_prefilter
     
-    if not os.path.exists(output_dir + '/' + target + '/' + "QS_best"):
-        os.makedirs(output_dir + '/' + target + '/' + "QS_best")
-    models = get_models(input_dir, target, name)
-    pool = Pool(processes = n_cpu)
-    processes = []
-    for model in models:
-        process = pool.apply_async(get_qs_best, [input_dir, target, name, model, cutoff])
-        processes.append(process)
-    rp = open(output_dir + '/' + target + '/' + "QS_best" + '/' + target + '.result','w')
-    for process in processes:
-        model, all_results = process.get()
-        for result in all_results:
-            category = result[0]
-            chain1 = result[1]
-            chain2 = result[2]
-            for item in result[3]:
-                rp.write(model + '\t' + category + '\t' + chain1 + ':' + chain2 + '\t' + item[0] + ':' + item[1] + '\t' + str(item[2]) + '\n')
+    # Create output directory for this model
+    model_output_dir = os.path.join(output_dir, model_name)
+    if not os.path.exists(model_output_dir):
+        os.makedirs(model_output_dir)
+    
+    model_name, all_results = get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, cutoff)
+    
+    rp = open(os.path.join(model_output_dir, model_name + '.qs'), 'w')
+    for result in all_results:
+        category = result[0]
+        chain1 = result[1]
+        chain2 = result[2]
+        for item in result[3]:
+            rp.write(model_name + '\t' + category + '\t' + chain1 + ':' + chain2 + '\t' + item[0] + ':' + item[1] + '\t' + str(item[2]) + '\n')
     rp.close()
 
 

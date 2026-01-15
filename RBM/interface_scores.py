@@ -8,19 +8,24 @@ for each interface pair and identifies the best matching interface pairs based o
 import os
 import sys
 import numpy as np
-from .utils import get_models
 
 
-def get_pair2scores(model, target, model2qsbest, output_dir):
+def get_pair2scores(model_name, model2qsbest, output_dir):
     """
     Load IPS and ICS scores for a model and combine with QS_best scores.
     
     Reads both IPS and ICS result files for a model, merges them with QS_best scores,
     and calculates interface weights based on interface size. Returns a dictionary
     mapping interface pairs to their combined score results and weights.
+    
+    Args:
+        model_name: Model name
+        model2qsbest: Dictionary of QS_best scores
+        output_dir: Path to output directory
     """
-    IPS_file = output_dir + '/' + target + '/' + 'IPS' + '/' + model + '.result'
-    ICS_file = output_dir + '/' + target + '/' + 'ICS' + '/' + model + '.result'
+    model_output_dir = os.path.join(output_dir, model_name)
+    IPS_file = os.path.join(model_output_dir, model_name + '.ips')
+    ICS_file = os.path.join(model_output_dir, model_name + '.ics')
     pair2results = {}
     cate = ''
     pair = ''
@@ -42,24 +47,31 @@ def get_pair2scores(model, target, model2qsbest, output_dir):
                 words1 = line1.split()
                 words2 = line2.split()
                 match_pair = words1[0] + ':' + words1[1]
-                qsbest = model2qsbest[model][(cate, pair, match_pair)]
+                qsbest = model2qsbest[model_name][(cate, pair, match_pair)]
                 results.append([words1[0], words1[1], float(words1[4]), float(words2[4]), qsbest])
     if cate and pair and weight:
         pair2results[(cate, pair)] = [weight, results]
     return pair2results
 
 
-def save_interface_scores(input_dir, target, name, output_dir):
+def save_interface_scores(model_name, output_dir):
     """
-    Aggregate and save per-interface scores for all models.
+    Aggregate and save per-interface scores for a single model.
     
     Reads scores from IPS, ICS, QS_best, DockQ, lDDT, and TM-score result files.
     For each interface pair, identifies the best matching pair based on maximum
     scores across all metrics. Writes consolidated per-interface scores with
     best matches and interface weights. Handles both reference (REF) and prediction (MOD) interfaces.
+    
+    Args:
+        model_name: Model name to process
+        output_dir: Path to output directory (will use output_dir/model_name/)
     """
-    models = get_models(input_dir, target, name)
-    fp = open(output_dir + '/' + target + '/QS_best/' + target + '.result','r')
+    models = [model_name]
+    model_output_dir = os.path.join(output_dir, model_name)
+    
+    # Read QS_best scores
+    fp = open(os.path.join(model_output_dir, model_name + '.qs'), 'r')
     model2qsbest = {}
     for line in fp:
         words = line.split()
@@ -74,7 +86,8 @@ def save_interface_scores(input_dir, target, name, output_dir):
         model2qsbest[model][(cate, pair1, pair2)] = float(words[4])
     fp.close()
 
-    fp = open(output_dir + '/' + target + '/DockQ/' + target + '.result','r')
+    # Read DockQ scores
+    fp = open(os.path.join(model_output_dir, model_name + '.dockq'), 'r')
     Rpair2dockq = {}
     Mpair2dockq = {}
     for line in fp:
@@ -101,7 +114,8 @@ def save_interface_scores(input_dir, target, name, output_dir):
             Mpair2dockq[model][Mpair] = [[Rpair, float(words[3])]]
     fp.close()
 
-    fp = open(output_dir + '/' + target + '/lDDT/' + target + '.result','r')
+    # Read lDDT scores
+    fp = open(os.path.join(model_output_dir, model_name + '.lddt'), 'r')
     Rpair2lddt = {}
     Mpair2lddt = {}
     for line in fp:
@@ -128,7 +142,8 @@ def save_interface_scores(input_dir, target, name, output_dir):
             Mpair2lddt[model][Mpair] = [[Rpair, float(words[3])]]
     fp.close()
 
-    fp = open(output_dir + '/' + target + '/TMscore/' + target + '.result','r')
+    # Read TMscore scores
+    fp = open(os.path.join(model_output_dir, model_name + '.tm'), 'r')
     Rpair2tm = {}
     Mpair2tm = {}
     for line in fp:
@@ -158,11 +173,10 @@ def save_interface_scores(input_dir, target, name, output_dir):
 
     good_count = 0
     bad_count = 0
-    os.makedirs(output_dir + '/' + target + '/per_interface_scores', exist_ok=True)
-    rp = open(output_dir + '/' + target + '/per_interface_scores/' + target + '.result','w')
+    rp = open(os.path.join(model_output_dir, model_name + '.interface_scores'), 'w')
     rp.write('model\tcategory\tchainpair\tmatchpair\tweight\tips\tics\tqsbest\tdockq\tlddt\ttm\n')
     for model in models:        
-        pair2results = get_pair2scores(model, target, model2qsbest, output_dir)
+        pair2results = get_pair2scores(model_name, model2qsbest, output_dir)
         for (cate, pair) in pair2results.keys():
             [weight, results] = pair2results[(cate, pair)]
             if not results:
@@ -223,7 +237,7 @@ def save_interface_scores(input_dir, target, name, output_dir):
                         else:
                             rp.write(model + '\tREF\t' + pair + '\tna\t' + str(weight) + '\t' + str(best_ips) + '\t' + str(best_ics) + '\t' + str(best_qs) + '\t' + str(best_dockq) + '\t' + str(best_lddt) + '\t' + str(best_tm) + '\n')
                     else:
-                        print ('error\t' + target + '\t' + model + '\t' + cate + '\t' + pair)
+                        print('error\t' + model + '\t' + cate + '\t' + pair)
 
                 elif cate == 'prediction':
                     check = 0
@@ -261,9 +275,9 @@ def save_interface_scores(input_dir, target, name, output_dir):
                         else:
                             rp.write(model + '\tMOD\t' + pair + '\tna\t' + str(weight) + '\t' + str(best_ips) + '\t' + str(best_ics) + '\t' + str(best_qs) + '\t' + str(best_dockq) + '\t' + str(best_lddt) + '\t' + str(best_tm) + '\n')
                     else:
-                        print ('error\t' + target + '\t' + model + '\t' + cate + '\t' + pair)
+                        print('error\t' + model + '\t' + cate + '\t' + pair)
     rp.close()
-    print (target + '\t' + str(good_count) + '\t' + str(bad_count))
+    print(model_name + '\t' + str(good_count) + '\t' + str(bad_count))
 
 # if __name__ == "__main__":
 #     input_dir = sys.argv[1]

@@ -8,15 +8,22 @@ the total DockQ scores for each interface pair, organizing them into a result fi
 import os
 import sys
 
-def get_dockq_scores(target, output_dir):
+def get_dockq_scores(model_name, output_dir):
     """
     Extract and save DockQ scores for all pairwise interfaces.
     
     Reads the list of interface pairs and extracts total DockQ scores from
     the corresponding DockQ output files. Writes results for both original
     and reversed chain pair orders. Missing scores are recorded as 0.0.
+    
+    Args:
+        model_name: Model name
+        output_dir: Path to output directory (will use output_dir/model_name/)
     """
-    fp = open(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + target + '.list', 'r')
+    model_output_dir = os.path.join(output_dir, model_name)
+    pairwise_dir = os.path.join(model_output_dir, 'pairwise_interfaces')
+    
+    fp = open(os.path.join(model_output_dir, 'pairwise_interfaces.list'), 'r')
     cases = []
     for line in fp:
         words = line.split()
@@ -25,8 +32,8 @@ def get_dockq_scores(target, output_dir):
         pair2 = words[2]
         cases.append([model, pair1, pair2])
     fp.close()
-    os.makedirs(output_dir + '/' + target + '/DockQ', exist_ok=True)
-    rp = open(output_dir + '/' + target + '/DockQ/' + target + '.result', 'w')
+    
+    rp = open(os.path.join(model_output_dir, model_name + '.dockq'), 'w')
     for case in cases:
         model = case[0]
         pair1 = case[1]
@@ -39,8 +46,9 @@ def get_dockq_scores(target, output_dir):
         newpair2 = prot2B + ':' + prot2A
 
         dockq = ''
-        if os.path.exists(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + model + '/' + pair1 + '_' + pair2 + '.dockq'):
-            fp = open(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + model + '/' + pair1 + '_' + pair2 + '.dockq', 'r')
+        dockq_file = os.path.join(pairwise_dir, f'{pair1}_{pair2}.dockq')
+        if os.path.exists(dockq_file):
+            fp = open(dockq_file, 'r')
             for line in fp:
                 if line[0] == '*':
                     pass
@@ -57,7 +65,7 @@ def get_dockq_scores(target, output_dir):
         else:
             rp.write(model + '\t' + pair1.replace('-',':') + '\t' + pair2.replace('-',':') + '\t0.0\n')
             rp.write(model + '\t' + newpair1 + '\t' + newpair2 + '\t0.0\n')
-            print (target, model, pair1, pair2)
+            print(model_name, model, pair1, pair2)
     rp.close()
 
 # if __name__ == "__main__":

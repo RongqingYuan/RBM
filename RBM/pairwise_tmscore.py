@@ -8,15 +8,22 @@ the TM-score values for each interface pair, organizing them into a result file.
 import os
 import sys
 
-def get_tm_scores(target, output_dir):
+def get_tm_scores(model_name, output_dir):
     """
     Extract and save TM-scores for all pairwise interfaces.
     
     Reads the list of interface pairs and extracts TM-score values from
     the corresponding TMscore output files. Writes results for both original
     and reversed chain pair orders to ensure complete coverage.
+    
+    Args:
+        model_name: Model name
+        output_dir: Path to output directory (will use output_dir/model_name/)
     """
-    fp = open(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + target + '.list', 'r')
+    model_output_dir = os.path.join(output_dir, model_name)
+    pairwise_dir = os.path.join(model_output_dir, 'pairwise_interfaces')
+    
+    fp = open(os.path.join(model_output_dir, 'pairwise_interfaces.list'), 'r')
     cases = []
     for line in fp:
         words = line.split()
@@ -25,8 +32,8 @@ def get_tm_scores(target, output_dir):
         pair2 = words[2]
         cases.append([model, pair1, pair2])
     fp.close()
-    os.makedirs(output_dir + '/' + target + '/TMscore', exist_ok=True)
-    rp = open(output_dir + '/' + target + '/TMscore/' + target + '.result', 'w')
+    
+    rp = open(os.path.join(model_output_dir, model_name + '.tm'), 'w')
     for case in cases:
         model = case[0]
         pair1 = case[1]
@@ -39,8 +46,9 @@ def get_tm_scores(target, output_dir):
         newpair2 = prot2B + ':' + prot2A
 
         tm = ''
-        if os.path.exists(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + model + '/' + pair1 + '_' + pair2 + '.tm'):
-            fp = open(output_dir + '/' + target + '/' + 'pairwise_interfaces' + '/' + model + '/' + pair1 + '_' + pair2 + '.tm', 'r')
+        tm_file = os.path.join(pairwise_dir, f'{pair1}_{pair2}.tm')
+        if os.path.exists(tm_file):
+            fp = open(tm_file, 'r')
             for line in fp:
                 words = line.split()
                 if len(words) > 3:
@@ -52,7 +60,7 @@ def get_tm_scores(target, output_dir):
             rp.write(model + '\t' + pair1.replace('-',':') + '\t' + pair2.replace('-',':') + '\t' + tm + '\n')
             rp.write(model + '\t' + newpair1 + '\t' + newpair2 + '\t' + tm + '\n')
         else:
-            print (target, model, pair1, pair2)
+            print(model_name, model, pair1, pair2)
     rp.close()
 
 # if __name__ == "__main__":

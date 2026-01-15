@@ -11,13 +11,16 @@ import json
 from itertools import permutations
 from multiprocessing import Pool
 import os
-from .utils import get_models
+from .utils import get_model_name_from_path
 
-def get_Rchain2resids(input_dir, target, name):
+def get_Rchain2resids(reference_pdb_path):
     """
     Extract residue IDs for each chain from the reference (target) PDB file.
+    
+    Args:
+        reference_pdb_path: Full path to the reference PDB file
     """
-    fp = open(input_dir + '/' + target + '/' + name + '.pdb', 'r')
+    fp = open(reference_pdb_path, 'r')
     Rchain2resids = {}
     for line in fp:
         if len(line) > 60:
@@ -31,7 +34,7 @@ def get_Rchain2resids(input_dir, target, name):
     fp.close()
     return Rchain2resids
 
-def get_ips_and_ics(input_dir, target, name, model, output_dir):
+def get_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir):
     """
     Calculate IPS and ICS scores for a single model and save results.
     
@@ -53,29 +56,33 @@ def get_ips_and_ics(input_dir, target, name, model, output_dir):
     where precision = overlap / reference_contacts and recall = overlap / model_contacts.
     
     Args:
-        input_dir: Path to input directory containing target folders
-        target: Target name (folder name, e.g., 'H0208')
-        name: Name of the reference structure (usually same as target)
-        model: Model name to process (e.g., 'H0208TS014_1')
+        reference_pdb_path: Full path to reference PDB file
+        ost_json_path: Full path to OST JSON file with chain mappings and contacts
+        model_name: Model name to use in output files (e.g., 'H0208TS014_1')
         output_dir: Path to output directory where results will be saved
+        target: Target name for organizing output files (e.g., 'H0208')
     
     Returns:
         int: Always returns 0 on success
     
     Output Files:
         Creates two result files:
-        - {output_dir}/{target}/IPS/{model}.result
-        - {output_dir}/{target}/ICS/{model}.result
+        - {output_dir}/{target}/IPS/{model_name}.result
+        - {output_dir}/{target}/ICS/{model_name}.result
         
         Each file contains interface pairs with their corresponding scores.
         Format: '>category chain1:chain2 size1:size2' followed by match results.
     """
-    Rchain2resids = get_Rchain2resids(input_dir, target, name)
-    with open(input_dir + '/' + target + '/' + 'ost' + '/' + model + '.json', 'r') as file:
+    Rchain2resids = get_Rchain2resids(reference_pdb_path)
+    with open(ost_json_path, 'r') as file:
         data = json.load(file)
     ref_chem_groups = data["chem_groups"]
     mod_chem_groups = data["chem_mapping"]
-    if target[0] == 'T':
+    
+    # Determine grouping strategy based on model name (T-series uses single group, H-series uses multiple)
+    use_single_group = model_name[0] == 'T' if model_name else False
+    
+    if use_single_group:
         groups = [[]]
         for i in range(len(ref_chem_groups)):
             if ref_chem_groups[i]:
@@ -261,11 +268,13 @@ def get_ips_and_ics(input_dir, target, name, model, output_dir):
                         map_results.append([Rchain1, Rchain2, len(good_Mresid1s), len(good_Mresid2s), 0.0, 0.0])
         all_results.append(['prediction', Mchain1, Mchain2, len(Mresid1s), len(Mresid2s), map_results])
     
-    if not os.path.exists(output_dir + '/' + target + '/' + 'IPS'):
-        os.makedirs(output_dir + '/' + target + '/' + 'IPS')
-    if not os.path.exists(output_dir + '/' + target + '/' + 'ICS'):
-        os.makedirs(output_dir + '/' + target + '/' + 'ICS')
-    rp = open(output_dir + '/' + target + '/' + 'IPS' + '/' + model + '.result','w')
+    # Create output directory for this model
+    model_output_dir = os.path.join(output_dir, model_name)
+    if not os.path.exists(model_output_dir):
+        os.makedirs(model_output_dir)
+    
+    # Write IPS results
+    rp = open(os.path.join(model_output_dir, model_name + '.ips'), 'w')
     for result in all_results:
         category = result[0]
         chain1 = result[1]
@@ -276,7 +285,9 @@ def get_ips_and_ics(input_dir, target, name, model, output_dir):
         for item in result[5]:
             rp.write(item[0] + '\t' + item[1] + '\t' + str(item[2]) + '\t' + str(item[3]) + '\t' + str(item[4])  + '\n')
     rp.close()
-    rp = open(output_dir + '/' + target + '/' + 'ICS' + '/' + model + '.result','w')
+    
+    # Write ICS results
+    rp = open(os.path.join(model_output_dir, model_name + '.ics'), 'w')
     for result in all_results:
         category = result[0]
         chain1 = result[1]
@@ -289,13 +300,17 @@ def get_ips_and_ics(input_dir, target, name, model, output_dir):
     rp.close()
     return 0
 
-def save_ips_and_ics(input_dir, target, name, output_dir):
+def save_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir):
     """
-    Calculate and save IPS and ICS scores for all models of a target.
+    Calculate and save IPS and ICS scores for a single model.
+    
+    Args:
+        reference_pdb_path: Full path to reference PDB file
+        ost_json_path: Full path to OST JSON file
+        model_name: Model name to use in output files
+        output_dir: Path to output directory (will create output_dir/model_name/)
     """
-    models = get_models(input_dir, target, name)
-    for model in models:
-        get_ips_and_ics(input_dir, target, name, model, output_dir)
+    get_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir)
 
 # if __name__ == "__main__":
 #     input_dir = sys.argv[1]

@@ -4,31 +4,14 @@ import os
 from typing import List
 
 
-def get_models(input_dir: str, target: str, name: str) -> List[str]:
+def get_model_name_from_path(model_path: str) -> str:
     """
-    Read model names from the model list file.
+    Extract model name from the full file path.
     
-    Parses the model list file and extracts model names. Lines starting with '#'
-    are treated as comments. Model names are read after the first comment line.
+    Args:
+        model_path: Full path to the model file
+        
+    Returns:
+        The base name of the model file without directory path
     """
-    model_list_path = os.path.join(input_dir, target, f'{name}.txt')
-    
-    models = []
-    start = False
-    
-    with open(model_list_path, 'r') as fp:
-        for line in fp:
-            words = line.split()
-            if not words:
-                continue
-            
-            # Skip comment lines starting with #
-            if words[0] == '#':
-                start = True
-                continue
-            
-            # After seeing a comment, start reading model names
-            if start and len(words) > 1:
-                models.append(words[1])
-    
-    return models
+    return os.path.basename(model_path)

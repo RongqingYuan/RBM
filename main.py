@@ -1,8 +1,9 @@
 import argparse
+import os
 from RBM.pairwise_interface_ips_ics import save_ips_and_ics
 from RBM.pairwise_interface_qs import save_qs_best
 from RBM.extract_pairwise_interfaces import save_pairwise_interfaces
-from RBM.commands import save_inputs, run_dockq, run_lddt, run_tmscore
+from RBM.commands import save_inputs_and_run
 from RBM.pairwise_dockq import get_dockq_scores
 from RBM.pairwise_lddt import get_lddt_scores
 from RBM.pairwise_tmscore import get_tm_scores
@@ -27,71 +28,137 @@ CA_DISTANCE_PREFILTER = 20.0
 QS_CUTOFF = 10
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--input_dir', type=str, required=True)
-    parser.add_argument('--target', type=str, required=True)
-    parser.add_argument('--name', type=str, required=True)
-    parser.add_argument('--output_dir', type=str, required=True)
-    parser.add_argument('--dockq_path', type=str, default="DockQ")
-    parser.add_argument('--lddt_path', type=str, default="lddt")
-    parser.add_argument('--tmscore_path', type=str, default="TMscore")
+    parser = argparse.ArgumentParser(
+        description='RBM (Reciprocal Best Matching) - Evaluate protein complex structure predictions'
+    )
+    
+    # File-based arguments (new approach)
+    parser.add_argument('--reference_pdb', type=str, required=True,
+                       help='Path to reference/target PDB file')
+    parser.add_argument('--model_pdb', type=str, required=True,
+                       help='Path to model PDB file')
+    parser.add_argument('--ost_json', type=str, required=True,
+                       help='Path to OpenStructure (OST) JSON file with chain mappings and contacts')
+    parser.add_argument('--output_dir', type=str, required=True,
+                       help='Path to output directory')
+    parser.add_argument('--target_name', type=str, required=True,
+                       help='Target name for organizing output files (e.g., H0208)')
+    parser.add_argument('--model_name', type=str, required=False,
+                       help='Model name to use in output files (default: basename of model_pdb)')
+    
+    # Tool paths
+    parser.add_argument('--dockq_path', type=str, default="DockQ",
+                       help='Path to DockQ executable (default: DockQ)')
+    parser.add_argument('--lddt_path', type=str, default="lddt",
+                       help='Path to lDDT executable (default: lddt)')
+    parser.add_argument('--tmscore_path', type=str, default="/home2/s439906/software/USalign/TMscore",
+                       help='Path to TMscore executable (default: TMscore)')
+    
+    # Optional arguments
     parser.add_argument('--scores', nargs='+', choices=['ICS', 'IPS', 'QS_best', 'DockQ', 'lDDT', 'TMscore'], 
                        default=['ICS', 'IPS', 'QS_best', 'DockQ', 'lDDT', 'TMscore'],
                        help='Choose 1-6 scores from: ICS, IPS, QS_best, DockQ, lDDT, TMscore')
-    parser.add_argument('--n_cpu', type=int, default=48)
-    parser.add_argument('--antibody', action='store_true')
-    parser.add_argument('--chainAs', type=str, default="")
-    parser.add_argument('--chainBs', type=str, default="")
-    parser.add_argument('--rbm_version', type=str, choices=['min', 'all', 'average'], default='min', help='RBM version: min, all, or average')
-    parser.add_argument('--interface_weight', type=str, choices=['log2', 'log10', 'linear'], default='log10', help='Weighting method: log2, log10, or linear')
+    parser.add_argument('--antibody', action='store_true',
+                       help='Enable antibody-specific analysis')
+    parser.add_argument('--chainAs', type=str, default="",
+                       help='Chain IDs for antibody component (for antibody mode)')
+    parser.add_argument('--chainBs', type=str, default="",
+                       help='Chain IDs for antigen component (for antibody mode)')
+    parser.add_argument('--rbm_version', type=str, choices=['min', 'all', 'average'], default='min',
+                       help='RBM version: min, all, or average (default: min)')
+    parser.add_argument('--interface_weight', type=str, choices=['log2', 'log10', 'linear'], default='log10',
+                       help='Weighting method: log2, log10, or linear (default: log10)')
 
     args = parser.parse_args()
-    input_dir = args.input_dir
-    target = args.target
-    name = args.name
+    
+    # Extract arguments
+    reference_pdb_path = args.reference_pdb
+    model_pdb_path = args.model_pdb
+    ost_json_path = args.ost_json
     output_dir = args.output_dir
+    target_name = args.target_name
+    model_name = args.model_name if args.model_name else os.path.basename(model_pdb_path)
     dockq_path = args.dockq_path
     lddt_path = args.lddt_path
     tmscore_path = args.tmscore_path
-    n_cpu = args.n_cpu
     antibody = args.antibody
     chainAs = args.chainAs
     chainBs = args.chainBs
     rbm_version = args.rbm_version
     interface_weight = args.interface_weight
     scores = args.scores
-
-    save_ips_and_ics(input_dir, target, name, output_dir)
-    save_qs_best(input_dir, target, name, output_dir, QS_CUTOFF, n_cpu, CA_DISTANCE_PREFILTER)
-    save_pairwise_interfaces(input_dir, target, name, output_dir, SCORE_FILTER_RATIO)
-    save_inputs(output_dir, target, dockq_path, lddt_path, tmscore_path, n_cpu)
-    run_dockq(output_dir, target)
-    get_dockq_scores(target, output_dir)
-    run_lddt(output_dir, target)
-    get_lddt_scores(target, output_dir)
-    run_tmscore(output_dir, target)
-    get_tm_scores(target, output_dir)
-    save_interface_scores(input_dir, target, name, output_dir)
-
+    
+    # Verify input files exist
+    if not os.path.exists(reference_pdb_path):
+        raise FileNotFoundError(f"Reference PDB file not found: {reference_pdb_path}")
+    if not os.path.exists(model_pdb_path):
+        raise FileNotFoundError(f"Model PDB file not found: {model_pdb_path}")
+    if not os.path.exists(ost_json_path):
+        raise FileNotFoundError(f"OST JSON file not found: {ost_json_path}")
+    
+    print(f"Starting RBM analysis...")
+    print(f"  Reference: {reference_pdb_path}")
+    print(f"  Model: {model_pdb_path}")
+    print(f"  OST JSON: {ost_json_path}")
+    print(f"  Target name: {target_name}")
+    print(f"  Model name: {model_name}")
+    print(f"  Output directory: {output_dir}")
+    print()
+    
+    # Run the pipeline
+    print("Step 1: Calculating IPS and ICS scores...")
+    save_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir)
+    
+    print("Step 2: Calculating QS_best scores...")
+    save_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, output_dir, QS_CUTOFF, CA_DISTANCE_PREFILTER)
+    
+    print("Step 3: Extracting pairwise interfaces...")
+    save_pairwise_interfaces(reference_pdb_path, model_pdb_path, model_name, output_dir, SCORE_FILTER_RATIO)
+    
+    print("Step 4: Running external tools (DockQ, lDDT, TMscore)...")
+    save_inputs_and_run(model_name, output_dir, dockq_path, lddt_path, tmscore_path)
+    
+    print("Step 5: Collecting DockQ scores...")
+    get_dockq_scores(model_name, output_dir)
+    
+    print("Step 6: Collecting lDDT scores...")
+    get_lddt_scores(model_name, output_dir)
+    
+    print("Step 7: Collecting TMscore scores...")
+    get_tm_scores(model_name, output_dir)
+    
+    print("Step 8: Aggregating interface scores...")
+    save_interface_scores(model_name, output_dir)
+    
     if not antibody:
+        print(f"Step 9: Calculating model scores (RBM version: {rbm_version}, interface weight: {interface_weight})...")
         if rbm_version == 'average':
-            save_model_scores_v1(input_dir, target, name, output_dir, interface_weight)
+            save_model_scores_v1(model_name, output_dir, interface_weight)
         elif rbm_version == 'all':
-            save_model_scores_v2(input_dir, target, name, output_dir, interface_weight)
+            save_model_scores_v2(model_name, output_dir, interface_weight)
         elif rbm_version == 'min':
-            save_model_scores_v3(input_dir, target, name, output_dir, interface_weight)
+            save_model_scores_v3(model_name, output_dir, interface_weight)
         else:
             raise ValueError("Invalid RBM version")
-        print("Completed RBM scoring")
-        print("RBM version: " + rbm_version + " interface weight: " + interface_weight)
+        print()
+        print("="*60)
+        print("RBM scoring completed successfully!")
+        print(f"  RBM version: {rbm_version}")
+        print(f"  Interface weight: {interface_weight}")
+        print(f"  Results saved to: {output_dir}/{model_name}/")
+        print("="*60)
     else:
         if chainAs and chainBs:
-            chainA_list = []
-            chainB_list = []
-            for chain in chainAs:
-                chainA_list.append(chain)
-            for chain in chainBs:
-                chainB_list.append(chain)
-            save_antibody_scores_v3(input_dir, target, name, output_dir, chainA_list, chainB_list)
+            print("Step 9: Calculating antibody-specific scores...")
+            chainA_list = list(chainAs)
+            chainB_list = list(chainBs)
+            save_antibody_scores_v3(model_name, output_dir, chainA_list, chainB_list)
+            print()
+            print("="*60)
+            print("Antibody scoring completed successfully!")
+            print(f"  Antibody chains: {chainAs}")
+            print(f"  Antigen chains: {chainBs}")
+            print(f"  Results saved to: {output_dir}/{model_name}/")
+            print("="*60)
         else:
-            raise ValueError("Please provide valid chainAs and chainBs")
+            raise ValueError("Please provide valid chainAs and chainBs for antibody mode")

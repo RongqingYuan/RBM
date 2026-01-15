@@ -11,7 +11,6 @@ import os
 import sys
 import math
 import numpy as np
-from .utils import get_models
 
 
 def get_weighted_average(scores):
@@ -38,7 +37,7 @@ def get_weighted_average(scores):
     ave_dockq = sum(v * w for v, w in zip(dockq, weight)) / sum(weight)
     return [ave_ips, ave_ics, ave_qsbest, ave_dockq]
 
-def save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs):
+def save_antibody_scores(model_name, output_dir, chainAs, chainBs):
     """
     Calculate and save per-model scores for antibody structures (average method).
     
@@ -46,9 +45,16 @@ def save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs):
     based on chain IDs. Calculates weighted averages separately for reference (REF)
     and prediction (MOD) interfaces. The final model score is the average of REF
     and MOD scores. Uses log10 weighting for interface sizes.
+    
+    Args:
+        model_name: Model name to process
+        output_dir: Path to output directory (will use output_dir/model_name/)
+        chainAs: List of antibody chain IDs
+        chainBs: List of antigen chain IDs
     """
-    models = get_models(input_dir, target, name)
-    fp = open(output_dir + '/' + target + '/' + 'per_interface_scores' + '/' + target + '.result', 'r')
+    models = [model_name]
+    model_output_dir = os.path.join(output_dir, model_name)
+    fp = open(os.path.join(model_output_dir, model_name + '.interface_scores'), 'r')
     model2Rscores = {}
     model2Mscores = {}
     for countl, line in enumerate(fp):
@@ -85,10 +91,8 @@ def save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs):
                         except KeyError:
                             model2Mscores[model] = [[weight, words[5], words[6], words[7], words[8]]]
     fp.close()
-    if not os.path.exists(output_dir + '/' + target + '/' + 'per_model_scores'):
-        os.makedirs(output_dir + '/' + target + '/' + 'per_model_scores')
 
-    rp = open(output_dir + '/' + target + '/' + 'per_model_scores' + '/' + target + '.result', 'w')
+    rp = open(os.path.join(model_output_dir, model_name + '.antibody_scores'), 'w')
     rp.write('model\tips\tics\tqsbest\tdockq\n')
     for model in models:
         checkR = 0
@@ -97,12 +101,12 @@ def save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs):
             model2Rscores[model]
             checkR = 1
         except KeyError:
-            print (target + ' miss REF scores for ' + model)
+            print(model_name + ' miss REF scores for ' + model)
         try:
             model2Mscores[model]
             checkM = 1
         except KeyError:
-            print (target + ' miss MOD scores for ' + model)
+            print(model_name + ' miss MOD scores for ' + model)
 
         if checkR:
             [Rips, Rics, Rqsbest, Rdockq] = get_weighted_average(model2Rscores[model])
@@ -117,7 +121,7 @@ def save_antibody_scores(input_dir, target, name, output_dir, chainAs, chainBs):
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\n')
     rp.close()
 
-def save_antibody_scores_v3(input_dir, target, name, output_dir, chainAs, chainBs):
+def save_antibody_scores_v3(model_name, output_dir, chainAs, chainBs):
     """
     Calculate and save per-model scores for antibody structures (minimum method).
     
@@ -125,9 +129,16 @@ def save_antibody_scores_v3(input_dir, target, name, output_dir, chainAs, chainB
     based on chain IDs. Calculates weighted averages separately for reference (REF)
     and prediction (MOD) interfaces. The final model score is the minimum of REF
     and MOD scores, penalizing models that perform poorly on either direction.
+    
+    Args:
+        model_name: Model name to process
+        output_dir: Path to output directory (will use output_dir/model_name/)
+        chainAs: List of antibody chain IDs
+        chainBs: List of antigen chain IDs
     """
-    models = get_models(input_dir, target, name)
-    fp = open(output_dir + '/' + target + '/' + 'per_interface_scores' + '/' + target + '.result', 'r')
+    models = [model_name]
+    model_output_dir = os.path.join(output_dir, model_name)
+    fp = open(os.path.join(model_output_dir, model_name + '.interface_scores'), 'r')
     model2Rscores = {}
     model2Mscores = {}
     for countl, line in enumerate(fp):
@@ -164,10 +175,8 @@ def save_antibody_scores_v3(input_dir, target, name, output_dir, chainAs, chainB
                         except KeyError:
                             model2Mscores[model] = [[weight, words[5], words[6], words[7], words[8]]]
     fp.close()
-    if not os.path.exists(output_dir + '/' + target + '/' + 'per_model_scores'):
-        os.makedirs(output_dir + '/' + target + '/' + 'per_model_scores')
 
-    rp = open(output_dir + '/' + target + '/' + 'per_model_scores' + '/' + target + '.result', 'w')
+    rp = open(os.path.join(model_output_dir, model_name + '.antibody_scores'), 'w')
     rp.write('model\tips\tics\tqsbest\tdockq\n')
     for model in models:
         checkR = 0
@@ -176,12 +185,12 @@ def save_antibody_scores_v3(input_dir, target, name, output_dir, chainAs, chainB
             model2Rscores[model]
             checkR = 1
         except KeyError:
-            print (target + ' miss REF scores for ' + model)
+            print(model_name + ' miss REF scores for ' + model)
         try:
             model2Mscores[model]
             checkM = 1
         except KeyError:
-            print (target + ' miss MOD scores for ' + model)
+            print(model_name + ' miss MOD scores for ' + model)
 
         if checkR:
             [Rips, Rics, Rqsbest, Rdockq] = get_weighted_average(model2Rscores[model])
