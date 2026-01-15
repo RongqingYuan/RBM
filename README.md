@@ -41,7 +41,7 @@ The pipeline now uses a **file-based approach** where you specify individual fil
 2. **Model PDB file**: The model structure
 3. **OST JSON file**: OpenStructure comparison results containing `chem_groups`, `chem_mapping`, and `reference_contacts`, and `model_contacts`
 
-Note: this software needs to pre-compute chain mappings and contacts using [OpenStructure](https://git.scicore.unibas.ch/schwede/openstructure) (OST). An example command to pre-compute chain mappings and contacts is:
+Note: this software needs to pre-compute chain mappings and contacts using [OpenStructure](https://git.scicore.unibas.ch/schwede/openstructure) (OST). The best way to do this is to use the Docker image files provided by OST developers. An example command to pre-compute chain mappings and contacts is:
 
 ```bash
 apptainer run \
@@ -107,7 +107,7 @@ Note: The tool paths (`--dockq_path`, `--lddt_path`, `--tmscore_path`) are only 
 - `--chainAs`: Chain IDs for the antibody component (for antibody mode)
 - `--chainBs`: Chain IDs for the antigen component (for antibody mode)
 - `--rbm_version`: RBM scoring version ('min', 'all', or 'average', default: 'min'. For more details, please refer to our paper)
-- `--interface_weight`: Interface weighting method ('log2', 'log10', or 'linear', default: 'log10'. For more details, please refer to our paper)
+- `--interface_weight`: Interface weighting method ('log10' or 'linear', default: 'log10'. For more details, please refer to our paper)
 - `--keep_tmp`: Keep temporary interface files in interface_tmp directory (default: False, will remove after completion)
 
 

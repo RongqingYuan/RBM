@@ -66,8 +66,8 @@ if __name__ == "__main__":
                        help='Chain IDs for antigen component (for antibody mode)')
     parser.add_argument('--rbm_version', type=str, choices=['min', 'all', 'average'], default='min',
                        help='RBM version: min, all, or average (default: min)')
-    parser.add_argument('--interface_weight', type=str, choices=['log2', 'log10', 'linear'], default='log10',
-                       help='Weighting method: log2, log10, or linear (default: log10)')
+    parser.add_argument('--interface_weight', type=str, choices=['log10', 'linear'], default='log10',
+                       help='Weighting method: log10 or linear (default: log10)')
     parser.add_argument('--keep_tmp', action='store_true',
                        help='Keep temporary interface files in interface_tmp directory (default: False, will remove after completion)')
 
