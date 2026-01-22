@@ -24,10 +24,11 @@ def get_chain_sequences(pdb_lines):
             chain = line[21]
             resnum = int(line[22:26].strip())
             resname = line[17:20].strip()
-            if chain not in sequences:
-                sequences[chain] = {}
-            if resnum not in sequences[chain]:
-                sequences[chain][resnum] = THREE_TO_ONE.get(resname, 'X')
+            if resname in THREE_TO_ONE:
+                if chain not in sequences:
+                    sequences[chain] = {}
+                if resnum not in sequences[chain]:
+                    sequences[chain][resnum] = THREE_TO_ONE[resname]
     return sequences
 
 
@@ -40,18 +41,21 @@ def sequence_similarity(seq1, seq2):
     if not common:
         return 0.0
     
-    # Identity in overlap, coverage, and length similarity
+    # Identity in overlap
     identity = sum(1 for r in common if seq1[r] == seq2[r]) / len(common)
-    coverage = len(common) / max(len(seq1), len(seq2))
-    length_sim = min(len(seq1), len(seq2)) / max(len(seq1), len(seq2))
+    # coverage = len(common) / max(len(seq1), len(seq2))
+    # length_sim = min(len(seq1), len(seq2)) / max(len(seq1), len(seq2))
     
-    return 0.6 * identity + 0.3 * coverage + 0.1 * length_sim
+    return identity
 
 
-def identical_in_overlap(seq1, seq2):
-    """Check if sequences are identical in overlapping residues."""
+def identical_in_overlap(seq1, seq2, threshold=0.99):
+    """Check if sequences are at least 99% identical in overlapping residues."""
     common = set(seq1.keys()) & set(seq2.keys())
-    return common and all(seq1[r] == seq2[r] for r in common)
+    if not common:
+        return False
+    identity = sum(1 for r in common if seq1[r] == seq2[r]) / len(common)
+    return identity >= threshold
 
 
 def cluster_chains(sequences):
@@ -87,6 +91,15 @@ def map_chains(target_seqs, model_seqs):
             score = sequence_similarity(m_seq, t_seq)
             if score > best_score:
                 best_score, best_target = score, t_chain
+        
+        # Check if best score meets 99% threshold
+        if best_score < 0.99:
+            raise ValueError(
+                f"Model chain '{m_chain}' cannot be mapped to any target chain with >= 99% "
+                f"sequence identity (best match: {best_score:.2%}). "
+                f"Please run BLAST to verify chain mapping."
+            )
+        
         model_to_target[m_chain] = best_target
     
     # Map clusters to their model chains

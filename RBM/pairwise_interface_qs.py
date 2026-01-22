@@ -113,6 +113,7 @@ def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, c
                 z = float(line[46:54])
                 atom = line[12:16].strip()
                 element = line[76:78].strip()
+                # residue_name = line[17:20].strip()
                 try:
                     Mchain2resids[chain].add(resid)
                     Mresid2coors[chain]
@@ -122,6 +123,12 @@ def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, c
                     Mchain2resids[chain] = set([resid])
                     Mresid2coors[chain] = {}
                     Mresid2CAcoor[chain] = {}
+                # if residue_name == 'GLY':
+                #     if atom == 'CA':
+                #         Mresid2CAcoor[chain][resid] = [x, y, z]
+                # else:
+                #     if atom == 'CB':
+                #         Mresid2CAcoor[chain][resid] = [x, y, z]
                 if atom == 'CA':
                     Mresid2CAcoor[chain][resid] = [x, y, z]
                 if element != 'H':
