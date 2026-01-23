@@ -17,17 +17,17 @@ THREE_TO_ONE = {
 
 
 def get_chain_sequences(pdb_lines):
-    """Extract CA-based sequences for each chain."""
     sequences = {}
     for line in pdb_lines:
         if line.startswith('ATOM') and line[12:16].strip() == 'CA':
             chain = line[21]
             resnum = int(line[22:26].strip())
             resname = line[17:20].strip()
-            if chain not in sequences:
-                sequences[chain] = {}
-            if resnum not in sequences[chain]:
-                sequences[chain][resnum] = THREE_TO_ONE.get(resname, 'X')
+            if resname in THREE_TO_ONE:
+                if chain not in sequences:
+                    sequences[chain] = {}
+                if resnum not in sequences[chain]:
+                    sequences[chain][resnum] = THREE_TO_ONE[resname]
     return sequences
 
 
@@ -40,22 +40,23 @@ def sequence_similarity(seq1, seq2):
     if not common:
         return 0.0
     
-    # Identity in overlap, coverage, and length similarity
+    # Identity in overlap
     identity = sum(1 for r in common if seq1[r] == seq2[r]) / len(common)
-    coverage = len(common) / max(len(seq1), len(seq2))
-    length_sim = min(len(seq1), len(seq2)) / max(len(seq1), len(seq2))
+    # coverage = len(common) / max(len(seq1), len(seq2))
+    # length_sim = min(len(seq1), len(seq2)) / max(len(seq1), len(seq2))
     
-    return 0.6 * identity + 0.3 * coverage + 0.1 * length_sim
+    return identity
 
 
-def identical_in_overlap(seq1, seq2):
-    """Check if sequences are identical in overlapping residues."""
+def identical_in_overlap(seq1, seq2, threshold=0.99):
     common = set(seq1.keys()) & set(seq2.keys())
-    return common and all(seq1[r] == seq2[r] for r in common)
+    if not common:
+        return False
+    identity = sum(1 for r in common if seq1[r] == seq2[r]) / len(common)
+    return identity >= threshold
 
 
 def cluster_chains(sequences):
-    """Cluster chains that are identical in overlapping regions."""
     chains = sorted(sequences.keys())
     clusters = []
     assigned = set()
@@ -87,6 +88,15 @@ def map_chains(target_seqs, model_seqs):
             score = sequence_similarity(m_seq, t_seq)
             if score > best_score:
                 best_score, best_target = score, t_chain
+        
+        # Check if best score meets 99% threshold
+        if best_score < 0.99:
+            raise ValueError(
+                f"Model chain '{m_chain}' cannot be mapped to any target chain with >= 99% "
+                f"sequence identity (best match: {best_score:.2%}). "
+                f"Please use run_blast.py to verify chain mapping."
+            )
+        
         model_to_target[m_chain] = best_target
     
     # Map clusters to their model chains
@@ -105,53 +115,83 @@ def map_chains(target_seqs, model_seqs):
 
 def get_contacts(pdb_lines, cutoff=5.0):
     """Find inter-chain contacts within distance cutoff (heavy atoms only)."""
-    # Parse heavy atoms
-    atoms = []
+    CA_DISTANCE_PREFILTER = 25.0
+    
+    # Parse atoms - separate CA and heavy atoms
+    ca_coords = {}  # (chain, resnum) -> [x, y, z]
+    heavy_atoms = {}  # (chain, resnum) -> [[x, y, z], ...]
+    chains = []
+    chain_residues = {}  # chain -> set of resnum
+    
     for line in pdb_lines:
         if line.startswith('ATOM'):
             atom_name = line[12:16].strip()
+            chain = line[21]
+            resnum = int(line[22:26].strip())
+            x = float(line[30:38])
+            y = float(line[38:46])
+            z = float(line[46:54])
+            
+            # Track chains
+            if chain not in chain_residues:
+                chains.append(chain)
+                chain_residues[chain] = set()
+            chain_residues[chain].add(resnum)
+            
+            # Store CA coordinates
+            if atom_name == 'CA':
+                ca_coords[(chain, resnum)] = [x, y, z]
+            
+            # Store heavy atom coordinates
             if not atom_name.startswith('H'):
-                atoms.append({
-                    'chain': line[21],
-                    'resnum': int(line[22:26].strip()),
-                    'coords': (float(line[30:38]), float(line[38:46]), float(line[46:54]))
-                })
+                key = (chain, resnum)
+                if key not in heavy_atoms:
+                    heavy_atoms[key] = []
+                heavy_atoms[key].append([x, y, z])
     
-    # Group by residue
-    residues = {}
-    for atom in atoms:
-        key = (atom['chain'], atom['resnum'])
-        residues.setdefault(key, []).append(atom['coords'])
-    
-    # Find inter-chain contacts
+    # Find inter-chain contacts with CA prefilter
     contacts = set()
-    res_list = list(residues.keys())
-    for i, (c1, r1) in enumerate(res_list):
-        for c2, r2 in res_list[i+1:]:
-            if c1 != c2:  # Different chains only
-                # Check minimum distance between any atom pair
-                if any(math.sqrt(sum((a-b)**2 for a, b in zip(coord1, coord2))) <= cutoff
-                       for coord1 in residues[(c1, r1)]
-                       for coord2 in residues[(c2, r2)]):
-                    contact = [f"{c1}.{r1}.", f"{c2}.{r2}."]
-                    contacts.add(tuple(sorted(contact)))
+    chains.sort()
+    
+    for i, chain1 in enumerate(chains):
+        for chain2 in chains[i+1:]:
+            # Only check different chains
+            for resnum1 in chain_residues[chain1]:
+                for resnum2 in chain_residues[chain2]:
+                    # Prefilter using CA distance
+                    ca1 = ca_coords.get((chain1, resnum1))
+                    ca2 = ca_coords.get((chain2, resnum2))
+                    
+                    if ca1 and ca2:
+                        ca_dist = math.sqrt(
+                            (ca1[0] - ca2[0])**2 + 
+                            (ca1[1] - ca2[1])**2 + 
+                            (ca1[2] - ca2[2])**2
+                        )
+                        
+                        if ca_dist < CA_DISTANCE_PREFILTER:
+                            # Check actual heavy atom distances
+                            atoms1 = heavy_atoms.get((chain1, resnum1), [])
+                            atoms2 = heavy_atoms.get((chain2, resnum2), [])
+                            
+                            min_dist = float('inf')
+                            for coord1 in atoms1:
+                                for coord2 in atoms2:
+                                    dist = math.sqrt(
+                                        (coord1[0] - coord2[0])**2 + 
+                                        (coord1[1] - coord2[1])**2 + 
+                                        (coord1[2] - coord2[2])**2
+                                    )
+                                    min_dist = min(min_dist, dist)
+                            
+                            if min_dist <= cutoff:
+                                contact = [f"{chain1}.{resnum1}.", f"{chain2}.{resnum2}."]
+                                contacts.add(tuple(sorted(contact)))
     
     return [list(c) for c in sorted(contacts)]
 
 
 def generate_json(target_pdb, model_pdb, output_json=None, cutoff=5.0):
-    """
-    Generate OST-compatible JSON from target and model PDB files.
-    
-    Args:
-        target_pdb: Path to target/reference PDB file
-        model_pdb: Path to model PDB file
-        output_json: Optional path to save JSON output
-        cutoff: Distance cutoff for contact detection in Angstroms (default: 5.0)
-    
-    Returns:
-        Dictionary with chem_groups, chem_mapping, reference_contacts, model_contacts
-    """
     # Read ATOM lines
     with open(target_pdb) as f:
         target_lines = [line for line in f if line.startswith('ATOM')]
