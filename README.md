@@ -117,7 +117,111 @@ Results are saved in `output_dir/model_name/`:
 
 - **Per-interface scores**: `model_name.interface_scores` (tab-separated file with IPS, ICS, QS, DockQ, lDDT, TM-score for each interface)
 - **Final RBM score**: `model_name.model_scores` (final model evaluation)
+
 - **Individual score files**: `model_name.ips`, `model_name.ics`, `model_name.qs`, `model_name.dockq`, `model_name.lddt`, `model_name.tm`
+
+<details>
+<summary>Click to view details of each file.</summary>
+
+Below are descriptions of each individual score file produced in your output directory.
+
+### IPS (Interface Patch Similarity) Scores:
+
+**Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `size1`, `size2`, `score`
+
+**Example output**:
+```
+H0217TS014_2	reference	C:G	H:A	21	26	0.0
+H0217TS014_2	reference	C:G	H:G	21	26	0.8039
+H0217TS014_2	reference	C:G	B:A	21	26	0.8039
+H0217TS014_2	reference	C:G	B:G	21	26	0.0
+```
+
+### ICS (Interface Contact Similarity) Scores:
+
+**Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `size1`, `size2`, `score`
+
+**Example output**:
+```
+H0217TS014_2	reference	C:G	H:A	21	26	0.0
+H0217TS014_2	reference	C:G	H:G	21	26	0.8276
+H0217TS014_2	reference	C:G	B:A	21	26	0.8276
+H0217TS014_2	reference	C:G	B:G	21	26	0.0
+```
+
+### QS_best:
+
+**Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
+
+**Example output**:
+```
+H0217TS014_2	reference	J:L	I:F	0.0
+H0217TS014_2	reference	J:L	I:L	0.0
+H0217TS014_2	reference	J:L	C:F	0.0
+H0217TS014_2	reference	J:L	C:L	0.0
+```
+
+### DockQ:
+
+**Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
+
+**Example output**:
+```
+H0217TS014_2	reference	A:H	E:A	0.854
+H0217TS014_2	reference	H:A	A:E	0.854
+H0217TS014_2	prediction	D:H	B:A	0.801
+H0217TS014_2	prediction	H:D	A:B	0.801
+```
+
+### lDDT (Local Distance Difference Test) Scores:
+
+**Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
+
+**Example output**:
+```
+H0217TS014_2	reference	A:H	E:A	0.8967
+H0217TS014_2	reference	H:A	A:E	0.8967
+H0217TS014_2	prediction	D:H	B:A	0.887
+H0217TS014_2	prediction	H:D	A:B	0.887
+```
+
+### TM-score:
+
+**Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
+
+**Example output**:
+```
+H0217TS014_2	reference	A:H	E:A	0.9822
+H0217TS014_2	reference	H:A	A:E	0.9822
+H0217TS014_2	prediction	D:H	B:A	0.9828
+H0217TS014_2	prediction	H:D	A:B	0.9828
+```
+
+### interface_scores: Aggregated Per-Interface Scores
+
+**Format**: Tab-separated with header row: `model`, `category`, `chainpair`, `matchpair`, `weight`, `ips`, `ics`, `qsbest`, `dockq`, `lddt`, `tm`
+
+**Example output**:
+```
+model	category	chainpair	matchpair	weight	ips	ics	qsbest	dockq	lddt	tm
+H0217TS014_2	REF	C:G	H:G	23.5	0.8039	0.8276	0.8714	0.784	0.8879	0.982
+H0217TS014_2	REF	E:H	D:G,J:A	3.5	0.5	0.5	0.7246	0.706	0.8899	0.9805
+H0217TS014_2	REF	F:L	na	14.0	0.0	0.0	0.0	0.0	0.0	0.0
+```
+
+### model_scores: Final Model-Level Scores
+
+**Format**: Tab-separated with header row: `model`, `ips`, `ics`, `qsbest`, `dockq`, `lddt`, `tm`
+
+**Example output**:
+```
+model	ips	ics	qsbest	dockq	lddt	tm
+H0217TS014_2	0.609	0.5868	0.6064	0.59	0.6806	0.7587
+```
+
+
+
+</details>
 
 Temporary interface files are stored in `interface_tmp/` and automatically removed after completion (use `--keep_tmp` to preserve them).
 
