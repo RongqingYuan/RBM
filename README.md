@@ -1,14 +1,14 @@
 # Reciprocal Best Matching (RBM)
 
-Reciprocal Best Matching (RBM) is a computational pipeline called designed for evaluating protein complex structure predictions with unknown stoichiometry during CASP16 assessment.
+Reciprocal Best Matching (RBM) is a computational pipeline designed for evaluating protein complex structure predictions with unknown stoichiometry during CASP16 assessment.
 
 
 ## Overview
 
 We developed and used RBM in our assessment of CASP16 Phase 0 challenge, in which stoichiometry information is not provided to the predictors. This pipeline provides an unbiased evaluation method that:
-- Penalizes both over-prediction and under-prediction of subunits
-- Maintains strong correlation with established CASP scores
-- Integrates with existing CASP assessment pipelines in regular challenges
+- Penalizes both over-prediction and under-prediction of subunits.
+- Maintains strong correlation with established CASP scores.
+- Integrates with existing CASP assessment pipelines in regular challenges.
 - Can be extended to any scores that assess a binary protein pair.
 
 ## Installation
