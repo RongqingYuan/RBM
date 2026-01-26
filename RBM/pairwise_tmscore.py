@@ -29,19 +29,21 @@ def get_tm_scores(model_name, output_dir):
     for line in fp:
         words = line.split()
         model = words[0]
-        pair1 = words[1]
-        pair2 = words[2]
-        cases.append([model, pair1, pair2])
+        category = words[1]
+        pair1 = words[2]
+        pair2 = words[3]
+        cases.append([model, category, pair1, pair2])
     fp.close()
     
     rp = open(os.path.join(model_output_dir, model_name + '.tm'), 'w')
     for case in cases:
         model = case[0]
-        pair1 = case[1]
+        category = case[1]
+        pair1 = case[2]
         prot1A = pair1.split('-')[0]
         prot1B = pair1.split('-')[1]
         newpair1 = prot1B + ':' + prot1A
-        pair2 = case[2]
+        pair2 = case[3]
         prot2A = pair2.split('-')[0]
         prot2B = pair2.split('-')[1]
         newpair2 = prot2B + ':' + prot2A
@@ -58,8 +60,8 @@ def get_tm_scores(model_name, output_dir):
                         break
             fp.close()
         if tm:
-            rp.write(model + '\t' + pair1.replace('-',':') + '\t' + pair2.replace('-',':') + '\t' + tm + '\n')
-            rp.write(model + '\t' + newpair1 + '\t' + newpair2 + '\t' + tm + '\n')
+            rp.write(model + '\t' + category + '\t' + pair1.replace('-',':') + '\t' + pair2.replace('-',':') + '\t' + tm + '\n')
+            rp.write(model + '\t' + category + '\t' + newpair1 + '\t' + newpair2 + '\t' + tm + '\n')
         else:
             print(model_name, model, pair1, pair2)
     rp.close()
