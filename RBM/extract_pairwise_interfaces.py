@@ -140,12 +140,12 @@ def process_model(reference_pdb_path, model_pdb_path, model_name, output_dir):
                 chain1A = pair1.split('-')[0]
                 chain1B = pair1.split('-')[1]
                 if cate == 'reference':
-                    cases.add((pair1, item[0] + '-' + item[1]))
+                    cases.add((cate, pair1, item[0] + '-' + item[1]))
                 elif cate == 'prediction':
                     if item[0] < item[1]:
-                        cases.add((item[0] + '-' + item[1], chain1A + '-' + chain1B))
+                        cases.add((cate, item[0] + '-' + item[1], chain1A + '-' + chain1B))
                     else:
-                        cases.add((item[1] + '-' + item[0], chain1B + '-' + chain1A))
+                        cases.add((cate, item[1] + '-' + item[0], chain1B + '-' + chain1A))
 
     fp = open(model_pdb_path, 'r')
     Mchain2lines = {}
@@ -167,8 +167,10 @@ def process_model(reference_pdb_path, model_pdb_path, model_name, output_dir):
     
     need_cases = []
     for case in cases:
-        pair1 = case[0]
-        pair2 = case[1]
+        category = case[0]
+        pair1 = case[1]
+        pair2 = case[2]
+        
         check1 = 0
         check2 = 0
         check3 = 0
@@ -266,12 +268,12 @@ def process_model_same_chain(reference_pdb_path, model_pdb_path, model_name, out
                 chain1A = pair1.split('-')[0]
                 chain1B = pair1.split('-')[1]
                 if cate == 'reference':
-                    cases.add((pair1, item[0] + '-' + item[1]))
+                    cases.add((cate, pair1, item[0] + '-' + item[1]))
                 elif cate == 'prediction':
                     if item[0] < item[1]:
-                        cases.add((item[0] + '-' + item[1], chain1A + '-' + chain1B))
+                        cases.add((cate, item[0] + '-' + item[1], chain1A + '-' + chain1B))
                     else:
-                        cases.add((item[1] + '-' + item[0], chain1B + '-' + chain1A))
+                        cases.add((cate, item[1] + '-' + item[0], chain1B + '-' + chain1A))
 
     fp = open(model_pdb_path, 'r')
     Mchain2lines = {}
@@ -293,8 +295,9 @@ def process_model_same_chain(reference_pdb_path, model_pdb_path, model_name, out
     
     need_cases = []
     for case in cases:
-        pair1 = case[0]
-        pair2 = case[1]
+        category = case[0]
+        pair1 = case[1]
+        pair2 = case[2]
         rp1 = open(os.path.join(pairwise_lddt_dir, pair1 + '_' + pair2 + '_target.pdb'), 'w')
         rp2 = open(os.path.join(pairwise_lddt_dir, pair1 + '_' + pair2 + '_model.pdb'), 'w')
         Rchain1 = pair1.split('-')[0]
@@ -321,7 +324,7 @@ def process_model_same_chain(reference_pdb_path, model_pdb_path, model_name, out
         rp1.close()
         rp2.close()
         need_cases.append(case)
-    return [model_name, need_cases]
+    return model_name, need_cases
 
 def save_pairwise_interfaces(reference_pdb_path, model_pdb_path, model_name, output_dir, score_filter_ratio):
     """
@@ -352,13 +355,15 @@ def save_pairwise_interfaces(reference_pdb_path, model_pdb_path, model_name, out
     with open(os.path.join(interface_tmp_dir, 'pairwise_interfaces.list'), 'w') as f:
         model_name, need_cases = process_model(reference_pdb_path, model_pdb_path, model_name, output_dir)
         for case in need_cases:
-            f.write(model_name + '\t' + case[0] + '\t' + case[1] + '\n')
+            # case is (category, pair1, pair2)
+            f.write(model_name + '\t' + case[0] + '\t' + case[1] + '\t' + case[2] + '\n')
     
     # Process and save pairwise interfaces for lDDT
     with open(os.path.join(interface_tmp_dir, 'pairwise_interfaces_for_lddt.list'), 'w') as f:
         model_name, need_cases = process_model_same_chain(reference_pdb_path, model_pdb_path, model_name, output_dir)
         for case in need_cases:
-            f.write(model_name + '\t' + case[0] + '\t' + case[1] + '\n')
+            # case is (category, pair1, pair2)
+            f.write(model_name + '\t' + case[0] + '\t' + case[1] + '\t' + case[2] + '\n')
 
 
 # if __name__ == "__main__":

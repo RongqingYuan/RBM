@@ -116,6 +116,12 @@ def save_interface_scores(model_name, output_dir):
     for line in fp:
         words = line.split()
         model = words[0]
+        # New format: model category Rpair Mpair score
+        category = words[1]
+        Rpair = words[2]
+        Mpair = words[3]
+        score = float(words[4])
+        
         try:
             Rpair2dockq[model]
         except KeyError:
@@ -125,16 +131,14 @@ def save_interface_scores(model_name, output_dir):
         except KeyError:
             Mpair2dockq[model] = {}
 
-        Rpair = words[1]
-        Mpair = words[2]
         try:
-            Rpair2dockq[model][Rpair].append([Mpair, float(words[3])])
+            Rpair2dockq[model][Rpair].append([Mpair, score])
         except KeyError:
-            Rpair2dockq[model][Rpair] = [[Mpair, float(words[3])]]
+            Rpair2dockq[model][Rpair] = [[Mpair, score]]
         try:
-            Mpair2dockq[model][Mpair].append([Rpair, float(words[3])])
+            Mpair2dockq[model][Mpair].append([Rpair, score])
         except KeyError:
-            Mpair2dockq[model][Mpair] = [[Rpair, float(words[3])]]
+            Mpair2dockq[model][Mpair] = [[Rpair, score]]
     fp.close()
 
     # Read lDDT scores
@@ -144,6 +148,12 @@ def save_interface_scores(model_name, output_dir):
     for line in fp:
         words = line.split()
         model = words[0]
+        # New format: model category Rpair Mpair score
+        category = words[1]
+        Rpair = words[2]
+        Mpair = words[3]
+        score = float(words[4])
+        
         try:
             Rpair2lddt[model]
         except KeyError:
@@ -153,16 +163,14 @@ def save_interface_scores(model_name, output_dir):
         except KeyError:
             Mpair2lddt[model] = {}
         
-        Rpair = words[1]
-        Mpair = words[2]
         try:
-            Rpair2lddt[model][Rpair].append([Mpair, float(words[3])])
+            Rpair2lddt[model][Rpair].append([Mpair, score])
         except KeyError:
-            Rpair2lddt[model][Rpair] = [[Mpair, float(words[3])]]
+            Rpair2lddt[model][Rpair] = [[Mpair, score]]
         try:
-            Mpair2lddt[model][Mpair].append([Rpair, float(words[3])])
+            Mpair2lddt[model][Mpair].append([Rpair, score])
         except KeyError:
-            Mpair2lddt[model][Mpair] = [[Rpair, float(words[3])]]
+            Mpair2lddt[model][Mpair] = [[Rpair, score]]
     fp.close()
 
     # Read TMscore scores
@@ -172,6 +180,12 @@ def save_interface_scores(model_name, output_dir):
     for line in fp:
         words = line.split()
         model = words[0]
+        # New format: model category Rpair Mpair score
+        category = words[1]
+        Rpair = words[2]
+        Mpair = words[3]
+        score = float(words[4])
+        
         try:
             Rpair2tm[model]
         except KeyError:
@@ -181,16 +195,14 @@ def save_interface_scores(model_name, output_dir):
         except KeyError:
             Mpair2tm[model] = {}
 
-        Rpair = words[1]
-        Mpair = words[2]
         try:
-            Rpair2tm[model][Rpair].append([Mpair, float(words[3])])
+            Rpair2tm[model][Rpair].append([Mpair, score])
         except KeyError:
-            Rpair2tm[model][Rpair] = [[Mpair, float(words[3])]]
+            Rpair2tm[model][Rpair] = [[Mpair, score]]
         try:
-            Mpair2tm[model][Mpair].append([Rpair, float(words[3])])
+            Mpair2tm[model][Mpair].append([Rpair, score])
         except KeyError:
-            Mpair2tm[model][Mpair] = [[Rpair, float(words[3])]]
+            Mpair2tm[model][Mpair] = [[Rpair, score]]
     fp.close()
 
 

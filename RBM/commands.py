@@ -33,9 +33,10 @@ def save_inputs_and_run(model_name, output_dir, dockq_path, lddt_path, tmscore_p
     fp = open(os.path.join(interface_tmp_dir, 'pairwise_interfaces.list'), 'r')
     for line in fp:
         words = line.split()
-        # model_dir = words[0]  # Not needed anymore
-        pair1 = words[1]
-        pair2 = words[2]
+        # Format: model_name category pair1 pair2
+        category = words[1]
+        pair1 = words[2]
+        pair2 = words[3]
         
         # Run DockQ if results don't exist
         dockq_out = os.path.join(pairwise_dir, f'{pair1}_{pair2}.dockq')
