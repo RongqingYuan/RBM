@@ -75,7 +75,7 @@ python main.py \
 
 ```bash
 python main.py \
-  --reference_pdb ./data/H0208/H0208.pdb \
+  --reference_pdb ./input_example/H0208/H0208.pdb \
   --model_pdb ./input_example/H0208/model/H0208TS014_1 \
   --ost_json ./input_example/H0208/ost/H0208TS014_1.json \
   --output_dir ./output_example \
