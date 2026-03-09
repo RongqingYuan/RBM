@@ -28,7 +28,15 @@ conda activate rbm
 # Install required packages
 pip install numpy
 pip install DockQ
-conda install -c conda-forge -c bioconda lddt tmalign
+conda install -c conda-forge -c bioconda lddt
+
+# Install TMscore from source (USalign)
+git clone https://github.com/pylelab/USalign.git
+cd USalign
+g++ -O3 -ffast-math -lm -o TMscore TMscore.cpp
+
+# Optional: make TMscore available globally
+export PATH="$(pwd):$PATH"
 ```
 
 **Important**: If you have not added DockQ, lDDT, and TMscore to your PATH, you must provide their full paths using `--dockq_path`, `--lddt_path`, and `--tmscore_path` arguments when running the pipeline.
