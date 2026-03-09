@@ -125,14 +125,14 @@ python main.py \
   --tmscore_path /path/to/TMscore
 ```
 
-Alternatively, you can execute the code using our Docker/Apptainer image (`openstructure_tools.sif`):
+Alternatively, you can execute the code using our Docker/Apptainer image (`RBM_tools.sif`):
 
 ```bash
 ROOT_DIR=$(pwd)
 apptainer exec \
   -B "${ROOT_DIR}:${ROOT_DIR}" \
   --pwd "${ROOT_DIR}" \
-  ./openstructure_tools.sif \
+  ./RBM_tools.sif \
   python3 main.py \
     --reference_pdb ./unknown_stoichiometry/H0208/H0208.pdb \
     --model_pdb ./unknown_stoichiometry/H0208/model/H0208TS022_1 \
