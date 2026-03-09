@@ -7,6 +7,7 @@ on pairwise interface structures.
 
 import os
 import sys
+import subprocess
 
 
 def save_inputs_and_run(model_name, output_dir, dockq_path, lddt_path, tmscore_path):
@@ -41,20 +42,53 @@ def save_inputs_and_run(model_name, output_dir, dockq_path, lddt_path, tmscore_p
         # Run DockQ if results don't exist
         dockq_out = os.path.join(pairwise_dir, f'{pair1}_{pair2}.dockq')
         print(f'  Running DockQ for {pair1}_{pair2}...')
-        cmd = f'{dockq_path} --no_align --n_cpu 1 {os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_model.pdb")} {os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_target.pdb")} > {dockq_out} 2> {os.path.join(pairwise_dir, pair1 + "_" + pair2 + ".log")}'
-        os.system(cmd)
+        dockq_log = os.path.join(pairwise_dir, pair1 + "_" + pair2 + ".log")
+        with open(dockq_out, "w") as dockq_fp, open(dockq_log, "w") as dockq_log_fp:
+            subprocess.run(
+                [
+                    dockq_path,
+                    "--no_align",
+                    "--n_cpu",
+                    "1",
+                    os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_model.pdb"),
+                    os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_target.pdb"),
+                ],
+                stdout=dockq_fp,
+                stderr=dockq_log_fp,
+                check=True,
+            )
 
         # Run lDDT if results don't exist
         lddt_out = os.path.join(pairwise_lddt_dir, f'{pair1}_{pair2}.lddt')
         print(f'  Running lDDT for {pair1}_{pair2}...')
-        cmd = f'{lddt_path} -x {os.path.join(pairwise_lddt_dir, pair1 + "_" + pair2 + "_model.pdb")} {os.path.join(pairwise_lddt_dir, pair1 + "_" + pair2 + "_target.pdb")} > {lddt_out}'
-        os.system(cmd)
+        with open(lddt_out, "w") as lddt_fp:
+            subprocess.run(
+                [
+                    lddt_path,
+                    "-x",
+                    os.path.join(pairwise_lddt_dir, pair1 + "_" + pair2 + "_model.pdb"),
+                    os.path.join(pairwise_lddt_dir, pair1 + "_" + pair2 + "_target.pdb"),
+                ],
+                stdout=lddt_fp,
+                check=True,
+            )
         
         # Run TMscore if results don't exist
         tm_out = os.path.join(pairwise_dir, f'{pair1}_{pair2}.tm')
         print(f'  Running TMscore for {pair1}_{pair2}...')
-        cmd = f'{tmscore_path} -c -ter 0 {os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_model.pdb")} {os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_target.pdb")} > {tm_out}'
-        os.system(cmd)
+        with open(tm_out, "w") as tm_fp:
+            subprocess.run(
+                [
+                    tmscore_path,
+                    "-c",
+                    "-ter",
+                    "0",
+                    os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_model.pdb"),
+                    os.path.join(pairwise_dir, pair1 + "_" + pair2 + "_target.pdb"),
+                ],
+                stdout=tm_fp,
+                check=True,
+            )
     fp.close()
     
     print(f'Completed all external tools for {model_name}')
