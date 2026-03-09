@@ -37,8 +37,8 @@ if __name__ == "__main__":
                        help='Path to reference/target PDB file')
     parser.add_argument('--model_pdb', type=str, required=True,
                        help='Path to model PDB file')
-    parser.add_argument('--input_json', '--ost_json', dest='input_json', type=str, required=True,
-                       help='Path to required OST-compatible JSON file with chain mappings and contacts (legacy alias: --ost_json)')
+    parser.add_argument('--input_json', type=str, required=True,
+                       help='Path to required OST-compatible JSON file with chain mappings and contacts')
     parser.add_argument('--output_dir', type=str, required=True,
                        help='Path to output directory')
     parser.add_argument('--target_name', type=str, required=True,
