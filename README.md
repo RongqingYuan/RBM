@@ -44,7 +44,7 @@ The pipeline now uses a **file-based approach** where you specify individual fil
 Note: this software needs to pre-compute chain mappings and contacts using [OpenStructure](https://git.scicore.unibas.ch/schwede/openstructure) (OST). The best way to do this is to use the Docker image files provided by OST developers. An example command to pre-compute chain mappings and contacts is:
 
 ```bash
-apptainer run \
+apptainer run --app OST \
   -B <path/to/data>:/work/data \
   -B <path/to/output>:/work/output \
   /path/to/openstructure.sif \
@@ -55,7 +55,7 @@ apptainer run \
     -rf pdb \
     -o /work/output/<model_name>.json \
     --ics \
-    --ips \
+    --ips
 ```
 
 ## Usage
@@ -66,33 +66,78 @@ Basic usage:
 python main.py \
   --reference_pdb <path/to/reference.pdb> \
   --model_pdb <path/to/model.pdb> \
-  --ost_json <path/to/ost_comparison.json> \
+  --input_json <path/to/input.json> \
   --output_dir <output_directory> \
   --target_name <target_name>
 ```
 
 ### Example
 
+1) Generate input JSON (choose one option):
+
+Option A: Generate JSON with OST (this is our default option during CASP16 assessment):
+
+```bash
+apptainer run --app OST \
+  -B ./input_example/H0208:/work/data \
+  -B ./input_example/H0208/ost:/work/output \
+  ./openstructure.sif \
+  compare-structures \
+    -m /work/data/model/H0208TS014_1 \
+    -mf pdb \
+    -r /work/data/H0208.pdb \
+    -rf pdb \
+    -o /work/output/H0208TS014_1.json \
+    --ics \
+    --ips
+```
+
+Option B: Generate OST-compatible JSON with the RBM script:
+
+```bash
+python RBM/compute_json.py \
+  --target_pdb ./input_example/H0208/H0208.pdb \
+  --model_pdb ./input_example/H0208/model/H0208TS014_1 \
+  --output_json ./input_example/H0208/ost/H0208TS014_1.json
+```
+
+2) Run RBM scoring using the generated JSON:
+
 ```bash
 python main.py \
   --reference_pdb ./input_example/H0208/H0208.pdb \
   --model_pdb ./input_example/H0208/model/H0208TS014_1 \
-  --ost_json ./input_example/H0208/ost/H0208TS014_1.json \
+  --input_json ./input_example/H0208/ost/H0208TS014_1.json \
   --output_dir ./output_example \
   --target_name H0208 \
   --model_name H0208TS014_1 \
+  # Optional: set these only if DockQ/lDDT/TMscore are not in your PATH \
   --dockq_path /path/to/DockQ \
   --lddt_path /path/to/lddt \
   --tmscore_path /path/to/TMscore
 ```
 
-Note: The tool paths (`--dockq_path`, `--lddt_path`, `--tmscore_path`) are only needed if these tools are not in your system PATH.
+Alternatively, you can execute the code using our Docker/Apptainer image (`openstructure_tools.sif`):
+
+```bash
+ROOT_DIR=$(pwd)
+apptainer exec \
+  -B "${ROOT_DIR}:${ROOT_DIR}" \
+  --pwd "${ROOT_DIR}" \
+  ./openstructure_tools.sif \
+  python3 main.py \
+    --reference_pdb ./unknown_stoichiometry/H0208/H0208.pdb \
+    --model_pdb ./unknown_stoichiometry/H0208/model/H0208TS022_1 \
+    --input_json ./unknown_stoichiometry/H0208/ost/H0208TS022_1.json \
+    --output_dir ./out_single_sif/H0208 \
+    --target_name H0208
+```
 
 ### Required Arguments
 
 - `--reference_pdb`: Path to reference/target PDB file
 - `--model_pdb`: Path to model PDB file
-- `--ost_json`: Path to OpenStructure (OST) JSON file with chain mappings and contacts
+- `--input_json`: Path to required OST-compatible JSON file with chain mappings and contacts (`--ost_json` is still accepted as a legacy alias)
 - `--output_dir`: Directory for output files
 - `--target_name`: Target name for organizing output files (e.g., H0208)
 
@@ -101,7 +146,7 @@ Note: The tool paths (`--dockq_path`, `--lddt_path`, `--tmscore_path`) are only 
 - `--model_name`: Model name to use in output files (default: basename of model_pdb)
 - `--dockq_path`: Path to DockQ executable (default: "DockQ")
 - `--lddt_path`: Path to lDDT executable (default: "lddt")
-- `--tmscore_path`: Path to TMscore executable (default: "/home2/s439906/software/USalign/TMscore")
+- `--tmscore_path`: Path to TMscore executable (default: "TMscore")
 - `--scores`: Choose 1-6 scores from: ICS, IPS, QS_best, DockQ, lDDT, TMscore (default: all)
 - `--antibody`: Flag for antibody structure analysis
 - `--chainAs`: Chain IDs for the antibody component (for antibody mode)
