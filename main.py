@@ -37,8 +37,8 @@ if __name__ == "__main__":
                        help='Path to reference/target PDB file')
     parser.add_argument('--model_pdb', type=str, required=True,
                        help='Path to model PDB file')
-    parser.add_argument('--ost_json', type=str, required=True,
-                       help='Path to OpenStructure (OST) JSON file with chain mappings and contacts')
+    parser.add_argument('--input_json', '--ost_json', dest='input_json', type=str, required=True,
+                       help='Path to required OST-compatible JSON file with chain mappings and contacts (legacy alias: --ost_json)')
     parser.add_argument('--output_dir', type=str, required=True,
                        help='Path to output directory')
     parser.add_argument('--target_name', type=str, required=True,
@@ -76,7 +76,7 @@ if __name__ == "__main__":
     # Extract arguments
     reference_pdb_path = args.reference_pdb
     model_pdb_path = args.model_pdb
-    ost_json_path = args.ost_json
+    input_json_path = args.input_json
     output_dir = args.output_dir
     target_name = args.target_name
     model_name = args.model_name if args.model_name else os.path.basename(model_pdb_path)
@@ -96,13 +96,13 @@ if __name__ == "__main__":
         raise FileNotFoundError(f"Reference PDB file not found: {reference_pdb_path}")
     if not os.path.exists(model_pdb_path):
         raise FileNotFoundError(f"Model PDB file not found: {model_pdb_path}")
-    if not os.path.exists(ost_json_path):
-        raise FileNotFoundError(f"OST JSON file not found: {ost_json_path}")
+    if not os.path.exists(input_json_path):
+        raise FileNotFoundError(f"Input JSON file not found: {input_json_path}")
     
     print(f"Starting RBM analysis...")
     print(f"  Reference: {reference_pdb_path}")
     print(f"  Model: {model_pdb_path}")
-    print(f"  OST JSON: {ost_json_path}")
+    print(f"  Input JSON: {input_json_path}")
     print(f"  Target name: {target_name}")
     print(f"  Model name: {model_name}")
     print(f"  Output directory: {output_dir}")
@@ -110,10 +110,10 @@ if __name__ == "__main__":
     
     # Run the pipeline
     print("Step 1: Calculating IPS and ICS scores...")
-    save_ips_and_ics(reference_pdb_path, ost_json_path, model_name, output_dir)
+    save_ips_and_ics(reference_pdb_path, input_json_path, model_name, output_dir)
     
     print("Step 2: Calculating QS_best scores...")
-    save_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, output_dir, QS_CUTOFF, CA_DISTANCE_PREFILTER)
+    save_qs_best(reference_pdb_path, model_pdb_path, input_json_path, model_name, output_dir, QS_CUTOFF, CA_DISTANCE_PREFILTER)
     
     print("Step 3: Extracting pairwise interfaces...")
     save_pairwise_interfaces(reference_pdb_path, model_pdb_path, model_name, output_dir, SCORE_FILTER_RATIO)
