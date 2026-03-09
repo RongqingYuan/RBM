@@ -83,6 +83,13 @@ python main.py \
 
 1) Generate input JSON (choose one option):
 
+As an example, we provided a ```input_example.tar.gz``` file containing the input files for the H0208 target. You can untar it and directly use them as input.
+```bash
+tar -xzf input_example.tar.gz
+```
+
+To generate the input JSON manually, you can choose from the following options:
+
 Option A: Generate JSON with OST (this is our default option during CASP16 assessment):
 
 ```bash
@@ -99,7 +106,6 @@ apptainer run --app OST \
     --ics \
     --ips
 ```
-
 Option B: Generate OST-compatible JSON with the RBM script:
 
 ```bash
@@ -119,10 +125,11 @@ python main.py \
   --output_dir ./output_example \
   --target_name H0208 \
   --model_name H0208TS014_1 \
+  
   # Optional: set these only if DockQ/lDDT/TMscore are not in your PATH \
-  --dockq_path /path/to/DockQ \
-  --lddt_path /path/to/lddt \
-  --tmscore_path /path/to/TMscore
+  # --dockq_path /path/to/DockQ \
+  # --lddt_path /path/to/lddt \
+  # --tmscore_path /path/to/TMscore
 ```
 
 Alternatively, you can execute the code using our Docker/Apptainer image (`RBM_tools.sif`):
@@ -134,10 +141,10 @@ apptainer exec \
   --pwd "${ROOT_DIR}" \
   ./RBM_tools.sif \
   python3 main.py \
-    --reference_pdb ./unknown_stoichiometry/H0208/H0208.pdb \
-    --model_pdb ./unknown_stoichiometry/H0208/model/H0208TS022_1 \
-    --input_json ./unknown_stoichiometry/H0208/ost/H0208TS022_1.json \
-    --output_dir ./out_single_sif/H0208 \
+    --reference_pdb ./input_example/H0208/H0208.pdb \
+    --model_pdb ./input_example/H0208/model/H0208TS022_1 \
+    --input_json ./input_example/H0208/ost/H0208TS022_1.json \
+    --output_dir ./output_example/H0208 \
     --target_name H0208
 ```
 
@@ -145,7 +152,7 @@ apptainer exec \
 
 - `--reference_pdb`: Path to reference/target PDB file
 - `--model_pdb`: Path to model PDB file
-- `--input_json`: Path to required OST-compatible JSON file with chain mappings and contacts (`--ost_json` is still accepted as a legacy alias)
+- `--input_json`: Path to required OST-compatible JSON file with chain mappings and contacts
 - `--output_dir`: Directory for output files
 - `--target_name`: Target name for organizing output files (e.g., H0208)
 
