@@ -155,7 +155,7 @@ if __name__ == "__main__":
             print("Step 9: Calculating antibody-specific scores...")
             chainA_list = list(chainAs)
             chainB_list = list(chainBs)
-            save_antibody_scores_v3(model_name, output_dir, chainA_list, chainB_list)
+            save_antibody_scores_v3(model_name, output_dir, chainA_list, chainB_list, interface_weight)
             print()
             print("="*60)
             print("Antibody scoring completed successfully!")
