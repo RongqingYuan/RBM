@@ -13,6 +13,14 @@ import math
 import numpy as np
 
 
+def _get_interface_weight(size_value, interface_weight):
+    """Compute interface weight using the selected weighting scheme."""
+    size = float(size_value)
+    if interface_weight == "log10":
+        return math.log10(size)
+    return size
+
+
 def get_weighted_average(scores):
     """
     Calculate weighted average for antibody score types.
@@ -37,7 +45,7 @@ def get_weighted_average(scores):
     ave_dockq = sum(v * w for v, w in zip(dockq, weight)) / sum(weight)
     return [ave_ips, ave_ics, ave_qsbest, ave_dockq]
 
-def save_antibody_scores(model_name, output_dir, chainAs, chainBs):
+def save_antibody_scores(model_name, output_dir, chainAs, chainBs, interface_weight='log10'):
     """
     Calculate and save per-model scores for antibody structures (average method).
     
@@ -61,7 +69,7 @@ def save_antibody_scores(model_name, output_dir, chainAs, chainBs):
         if countl:
             words = line.split()
             model = words[0]
-            weight = math.log10(float(words[4]))
+            weight = _get_interface_weight(words[4], interface_weight)
             
             if weight:    
                 getit = 0
@@ -121,7 +129,7 @@ def save_antibody_scores(model_name, output_dir, chainAs, chainBs):
             rp.write(model + '\t' + str(ips) + '\t' + str(ics) + '\t' + str(qsbest) + '\t' + str(dockq) + '\n')
     rp.close()
 
-def save_antibody_scores_v3(model_name, output_dir, chainAs, chainBs):
+def save_antibody_scores_v3(model_name, output_dir, chainAs, chainBs, interface_weight='log10'):
     """
     Calculate and save per-model scores for antibody structures (minimum method).
     
@@ -145,7 +153,7 @@ def save_antibody_scores_v3(model_name, output_dir, chainAs, chainBs):
         if countl:
             words = line.split()
             model = words[0]
-            weight = math.log10(float(words[4]))
+            weight = _get_interface_weight(words[4], interface_weight)
             
             if weight:    
                 getit = 0
