@@ -15,7 +15,7 @@ from multiprocessing import Pool
 from .utils import get_model_name_from_path, parse_reference_pdb
 
 
-def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, cutoff):
+def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, cutoff, ca_distance_prefilter=20):
     """
     Calculate QS_best score for a single model.
     
@@ -147,7 +147,7 @@ def get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, c
                         CAcoor1 = Mresid2CAcoor[chain1][resid1]
                         CAcoor2 = Mresid2CAcoor[chain2][resid2]
                         CAdist = ((CAcoor1[0] - CAcoor2[0]) ** 2 + (CAcoor1[1] - CAcoor2[1]) ** 2 + (CAcoor1[2] - CAcoor2[2]) ** 2) ** 0.5
-                        if CAdist < CA_DISTANCE_PREFILTER:
+                        if CAdist < ca_distance_prefilter:
                             coor1s = Mresid2coors[chain1][resid1]
                             coor2s = Mresid2coors[chain2][resid2]
                             dists = []
@@ -280,16 +280,19 @@ def save_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, 
         cutoff: Distance cutoff in Angstroms for identifying contacts (default: 10)
         ca_distance_prefilter: CA distance pre-filter threshold (default: 20)
     """
-    # Override the global constant with the passed parameter
-    global CA_DISTANCE_PREFILTER
-    CA_DISTANCE_PREFILTER = ca_distance_prefilter
-    
     # Create output directory for this model
     model_output_dir = os.path.join(output_dir, model_name)
     if not os.path.exists(model_output_dir):
         os.makedirs(model_output_dir)
     
-    model_name, all_results = get_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, cutoff)
+    model_name, all_results = get_qs_best(
+        reference_pdb_path,
+        model_pdb_path,
+        ost_json_path,
+        model_name,
+        cutoff,
+        ca_distance_prefilter,
+    )
     
     rp = open(os.path.join(model_output_dir, model_name + '.qs'), 'w')
     for result in all_results:
@@ -305,11 +308,24 @@ def save_qs_best(reference_pdb_path, model_pdb_path, ost_json_path, model_name, 
 
 
 if __name__ == "__main__":
-    input_dir = sys.argv[1]
-    target = sys.argv[2]
-    name = sys.argv[3]
-    output_dir = sys.argv[4]
-    save_qs_best(input_dir, target, name, output_dir)
+    import argparse
 
+    parser = argparse.ArgumentParser(description="Compute QS_best scores for one model.")
+    parser.add_argument("--reference_pdb", required=True, help="Path to reference/target PDB file")
+    parser.add_argument("--model_pdb", required=True, help="Path to model PDB file")
+    parser.add_argument("--input_json", required=True, help="Path to OST-compatible input JSON file")
+    parser.add_argument("--model_name", required=True, help="Model name for output files")
+    parser.add_argument("--output_dir", required=True, help="Output directory")
+    parser.add_argument("--qs_cutoff", type=float, default=10, help="Contact distance cutoff (default: 10)")
+    parser.add_argument("--ca_distance_prefilter", type=float, default=20, help="CA prefilter distance (default: 20)")
+    args = parser.parse_args()
 
-
+    save_qs_best(
+        args.reference_pdb,
+        args.model_pdb,
+        args.input_json,
+        args.model_name,
+        args.output_dir,
+        args.qs_cutoff,
+        args.ca_distance_prefilter,
+    )
