@@ -2,10 +2,10 @@
 
 Reciprocal Best Matching (RBM) is a computational pipeline designed for evaluating protein complex structure predictions with unknown stoichiometry during CASP16 assessment.
 
-
 ## Overview
 
 We developed and used RBM in our assessment of CASP16 Phase 0 challenge, in which stoichiometry information is not provided to the predictors. This pipeline provides an unbiased evaluation method that:
+
 - Penalizes both over-prediction and under-prediction of subunits.
 - Maintains strong correlation with established CASP scores.
 - Integrates with existing CASP assessment pipelines in regular challenges.
@@ -14,6 +14,7 @@ We developed and used RBM in our assessment of CASP16 Phase 0 challenge, in whic
 ## Installation
 
 Our pipeline requires the following software:
+
 - [DockQ](https://github.com/wallnerlab/DockQ)
 - [lDDT](https://anaconda.org/bioconda/lddt)
 - [TMscore](https://github.com/pylelab/USalign)
@@ -41,15 +42,17 @@ export PATH="$(pwd):$PATH"
 
 **Important**: If you have not added DockQ, lDDT, and TMscore to your PATH, you must provide their full paths using `--dockq_path`, `--lddt_path`, and `--tmscore_path` arguments when running the pipeline.
 
-## Input Requirements
+## Usage
 
-The pipeline now uses a **file-based approach** where you specify individual file paths instead of directory structures. You need to provide:
+### Inputs
 
-1. **Reference PDB file**: The target(reference) structure
+You need to provide:
+
+1. **Reference PDB file**: The target (reference) structure
 2. **Model PDB file**: The model structure
-3. **OST JSON file**: OpenStructure comparison results containing `chem_groups`, `chem_mapping`, and `reference_contacts`, and `model_contacts`
+3. **OST-compatible JSON file**: comparison results containing `chem_groups`, `chem_mapping`, `reference_contacts`, and `model_contacts`
 
-Note: this software needs to pre-compute chain mappings and contacts using [OpenStructure](https://git.scicore.unibas.ch/schwede/openstructure) (OST). The best way to do this is to use the Docker image files provided by OST developers. An example command to pre-compute chain mappings and contacts is:
+To pre-compute chain mappings and contacts using [OpenStructure](https://git.scicore.unibas.ch/schwede/openstructure) (OST):
 
 ```bash
 apptainer run --app OST \
@@ -66,9 +69,7 @@ apptainer run --app OST \
     --ips
 ```
 
-## Usage
-
-Basic usage:
+### Basic usage
 
 ```bash
 python main.py \
@@ -81,16 +82,17 @@ python main.py \
 
 ### Example
 
-1) Generate input JSON (choose one option):
+#### 1. Obtain input JSON (choose one option)
 
-As an example, we provided a ```input_example.tar.gz``` file containing the input files for the H0208 target. You can untar it and directly use them as input.
+As an example, we provided a `input_example.tar.gz` file containing the input files for the H0208 target. You can untar it and directly use them as input.
+
 ```bash
 tar -xzf input_example.tar.gz
 ```
 
 To generate the input JSON manually, you can choose from the following options:
 
-Option A: Generate JSON with OST (this is our default option during CASP16 assessment):
+**Option A**: Generate JSON with OST (this is our default option during CASP16 assessment):
 
 ```bash
 apptainer run --app OST \
@@ -106,7 +108,8 @@ apptainer run --app OST \
     --ics \
     --ips
 ```
-Option B: Generate OST-compatible JSON with the RBM script:
+
+**Option B**: Generate OST-compatible JSON with the RBM script:
 
 ```bash
 python RBM/compute_json.py \
@@ -115,7 +118,7 @@ python RBM/compute_json.py \
   --output_json ./input_example/H0208/ost/H0208TS014_1.json
 ```
 
-2) Run RBM scoring using the generated JSON:
+#### 2. Run RBM scoring using the generated JSON
 
 ```bash
 python main.py \
@@ -132,7 +135,13 @@ python main.py \
   # --tmscore_path /path/to/TMscore
 ```
 
-Alternatively, you can execute the code using our Docker/Apptainer image (`RBM_tools.sif`):
+Alternatively, you can execute the code using our Docker/Apptainer image (`RBM_tools.sif`). It is a modified version of the OST image [openstructure.sif](https://git.scicore.unibas.ch/schwede/openstructure/-/blob/master/docker/) that includes DockQ, lDDT, and TMscore. It is available for download:
+
+```bash
+wget https://conglab.swmed.edu/RBM_container/RBM_tools.sif.gz
+gunzip RBM_tools.sif.gz
+```
+Then run the code:
 
 ```bash
 ROOT_DIR=$(pwd)
@@ -170,18 +179,15 @@ apptainer exec \
 - `--interface_weight`: Interface weighting method ('log10' or 'linear', default: 'log10'. For more details, please refer to our paper)
 - `--keep_tmp`: Keep temporary interface files in interface_tmp directory (default: False, will remove after completion)
 
-
 ## Output
 
 Results are saved in `output_dir/model_name/`:
 
 - **Per-interface scores**: `model_name.interface_scores` (tab-separated file with IPS, ICS, QS, DockQ, lDDT, TM-score for each interface)
 - **Final RBM score**: `model_name.model_scores` (final model evaluation)
-
 - **Individual score files**: `model_name.ips`, `model_name.ics`, `model_name.qs`, `model_name.dockq`, `model_name.lddt`, `model_name.tm`
 
-<details>
-<summary>Click to view details of each file.</summary>
+Click to view details of each file.
 
 Below are descriptions of each individual score file produced in your output directory.
 
@@ -190,6 +196,7 @@ Below are descriptions of each individual score file produced in your output dir
 **Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `size1`, `size2`, `score`
 
 **Example output**:
+
 ```
 H0217TS014_2	reference	C:G	H:A	21	26	0.0
 H0217TS014_2	reference	C:G	H:G	21	26	0.8039
@@ -202,6 +209,7 @@ H0217TS014_2	reference	C:G	B:G	21	26	0.0
 **Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `size1`, `size2`, `score`
 
 **Example output**:
+
 ```
 H0217TS014_2	reference	C:G	H:A	21	26	0.0
 H0217TS014_2	reference	C:G	H:G	21	26	0.8276
@@ -214,6 +222,7 @@ H0217TS014_2	reference	C:G	B:G	21	26	0.0
 **Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
 
 **Example output**:
+
 ```
 H0217TS014_2	reference	J:L	I:F	0.0
 H0217TS014_2	reference	J:L	I:L	0.0
@@ -226,6 +235,7 @@ H0217TS014_2	reference	J:L	C:L	0.0
 **Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
 
 **Example output**:
+
 ```
 H0217TS014_2	reference	A:H	E:A	0.854
 H0217TS014_2	reference	H:A	A:E	0.854
@@ -238,6 +248,7 @@ H0217TS014_2	prediction	H:D	A:B	0.801
 **Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
 
 **Example output**:
+
 ```
 H0217TS014_2	reference	A:H	E:A	0.8967
 H0217TS014_2	reference	H:A	A:E	0.8967
@@ -250,6 +261,7 @@ H0217TS014_2	prediction	H:D	A:B	0.887
 **Format**: Tab-separated with columns: `model_name`, `category`, `chainpair`, `matchpair`, `score`
 
 **Example output**:
+
 ```
 H0217TS014_2	reference	A:H	E:A	0.9822
 H0217TS014_2	reference	H:A	A:E	0.9822
@@ -262,6 +274,7 @@ H0217TS014_2	prediction	H:D	A:B	0.9828
 **Format**: Tab-separated with header row: `model`, `category`, `chainpair`, `matchpair`, `weight`, `ips`, `ics`, `qsbest`, `dockq`, `lddt`, `tm`
 
 **Example output**:
+
 ```
 model	category	chainpair	matchpair	weight	ips	ics	qsbest	dockq	lddt	tm
 H0217TS014_2	REF	C:G	H:G	23.5	0.8039	0.8276	0.8714	0.784	0.8879	0.982
@@ -274,6 +287,7 @@ H0217TS014_2	REF	F:L	na	14.0	0.0	0.0	0.0	0.0	0.0	0.0
 **Format**: Tab-separated with header row: `model`, `ips`, `ics`, `qsbest`, `dockq`, `lddt`, `tm`
 
 **Example output**:
+
 ```
 model	ips	ics	qsbest	dockq	lddt	tm
 H0217TS014_2	0.609	0.5868	0.6064	0.59	0.6806	0.7587
@@ -281,12 +295,10 @@ H0217TS014_2	0.609	0.5868	0.6064	0.59	0.6806	0.7587
 
 
 
-</details>
-
 Temporary interface files are stored in `interface_tmp/` and automatically removed after completion (use `--keep_tmp` to preserve them).
 
 ## Citation
 
-If you found our method useful, please cite our paper:
+If you find our method useful, please cite our paper:
 
-If you found our CASP16 assessment results useful for your research, please consider citing our CASP16 assessment paper:
+If you find our CASP16 assessment results useful for your research, please consider citing our CASP16 assessment paper:
