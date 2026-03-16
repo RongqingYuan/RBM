@@ -138,7 +138,7 @@ python main.py \
 Alternatively, you can execute the code using our Docker/Apptainer image (`RBM_tools.sif`). It is a modified version of the OST image [openstructure.sif](https://git.scicore.unibas.ch/schwede/openstructure/-/blob/master/docker/) that includes DockQ, lDDT, and TMscore. It is available for download:
 
 ```bash
-wget https://conglab.swmed.edu/RBM_container/RBM_tools.sif.gz
+wget --no-check-certificate https://conglab.swmed.edu/RBM_container/RBM_tools.sif.gz
 gunzip RBM_tools.sif.gz
 ```
 Then run the code:
